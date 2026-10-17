@@ -1037,7 +1037,7 @@ public partial class MainWindow : Window
         if (Settings.BackgroundMode)
         {
             e.Add(new(Glyphs.Minimize, "Nova'yı arka plana al", HideToTray));
-            e.Add(new(Glyphs.Close, "Nova'yı tamamen kapat", ReallyExit));
+            e.Add(new(Glyphs.Close, "Nova'yı kapat", ReallyExit));
         }
         else e.Add(new(Glyphs.Close, "Nova'dan çık", ReallyExit));
         ShowMenu(new OptionsMenu("Güç", e));

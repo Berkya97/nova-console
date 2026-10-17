@@ -29,7 +29,7 @@ public partial class MainWindow
     HudWindow _hud = null!;
     Tray _tray = null!;
     QuickMenu? _quick;
-    bool _pendingPicker, _reallyExit;
+    bool _pendingPicker, _reallyExit, _noWatcher;
     string? _weather;
     Updater.Release? _pendingUpdate;
 
@@ -42,7 +42,7 @@ public partial class MainWindow
         _hud = new HudWindow();
         _tray = new Tray { Visible = Settings.BackgroundMode };
         _tray.OpenRequested += BringBack;
-        _tray.ExitRequested += ReallyExit;
+        _tray.ExitRequested += QuitCompletely;
 
         _remote.Pin = Settings.RemotePin;
         _remote.Action += a =>
@@ -117,6 +117,8 @@ public partial class MainWindow
         _tray.Dispose();
         _hud.Close();
         _quick?.Close();
+        // Kapandıktan sonra da Ctrl+Alt+N ve kol kombinasyonuyla açılabilsin.
+        if (!_noWatcher && Settings.WakeWhenClosed && !DevScript.Active) Watcher.Spawn();
     }
 
     void StartExtras()
@@ -175,10 +177,18 @@ public partial class MainWindow
         Close();
     }
 
+    /// <summary>Dinleyici de kalmadan tamamen kapat (simge alanındaki "Tamamen kapat").</summary>
+    void QuitCompletely()
+    {
+        _noWatcher = true;
+        ReallyExit();
+    }
+
     /// <summary>Nova'yı kapatıp verilen exe ile yeniden açar (dil değişikliği, güncelleme, kurulum).</summary>
     void Restart(string? exe = null)
     {
         _reallyExit = true;
+        _noWatcher = true;
         SingleInstance.Release();
         try { Process.Start(new ProcessStartInfo(exe ?? Environment.ProcessPath!, "--noboot") { UseShellExecute = true }); }
         catch (Exception ex) { App.Log(ex); }
@@ -476,6 +486,15 @@ public partial class MainWindow
                        "Ctrl+Alt+N ya da kolda Start+View ile anında açılır. Windows açılışında başlat da açıksa Nova görünmeden başlar.",
                 Value = () => OnOff(Settings.BackgroundMode),
                 Change = _ => { Settings.BackgroundMode = !Settings.BackgroundMode; Settings.Save(); _tray.Visible = Settings.BackgroundMode; },
+            },
+            new()
+            {
+                Glyph = Glyphs.Power, Label = "Kapalıyken de aç",
+                Help = "Açıkken Nova kapatıldığında arka planda penceresiz, çok küçük bir dinleyici kalır. " +
+                       "Ctrl+Alt+N'ye ya da kolda Start+View (PS kolunda Options+Create) kombinasyonuna basınca Nova açılır. " +
+                       "Simge alanındaki Nova simgesinden \"Tamamen kapat\" dersen dinleyici de kapanır.",
+                Value = () => OnOff(Settings.WakeWhenClosed),
+                Change = _ => { Settings.WakeWhenClosed = !Settings.WakeWhenClosed; Settings.Save(); },
             },
             new()
             {

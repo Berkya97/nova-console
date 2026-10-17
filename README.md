@@ -33,6 +33,7 @@ sonraki sürümleri Nova kendisi indirip kurar.
 
 **Konsol deneyimi**
 - **Arka plan modu:** Kapatınca Nova saatin yanındaki simge alanında bekler; kol ya da kısayolla anında açılır. Windows açılışında görünmeden başlayabilir.
+- **Kapalıyken de aç:** Nova kapatıldıktan sonra arka planda yaklaşık 9 MB'lık penceresiz bir dinleyici kalır; Ctrl+Alt+N ya da kol kombinasyonuyla Nova yeniden açılır. Simge alanından \"Tamamen kapat\" denince o da kapanır.
 - **Oyun içi hızlı menü:** Oyundayken kolda **Start + View** (ya da Ctrl+Alt+G) ile oyunun üstünde panel açılır: Nova'ya dön, ekran görüntüsü, son 30 saniyeyi kaydet (Xbox Game Bar), ses, oyunu kapat; oturum ve günlük oyun süresi görünür.
 - **Ekran görüntüsü:** Ctrl+Alt+S ile her yerde; Resimler › Nova klasörüne kaydedilir.
 - **Kupalar:** Nova'nın kendi kupaları (bronz, gümüş, altın, platin) ve isteğe bağlı Steam başarımları.
@@ -61,7 +62,7 @@ sonraki sürümleri Nova kendisi indirip kurar.
 | Güç menüsü | P | Start | Options |
 | Sekme değiştir | Q / E, Tab, 1–5 | LB / RB | L1 / R1 |
 | Sayfa atla | PgUp / PgDn | LT / RT | L2 / R2 |
-| **Nova'ya dön** | **Ctrl + Alt + N** | **Start + View** (Nova gizliyken) | **Options + Create** |
+| **Nova'ya dön / Nova'yı aç** (kapalıyken de) | **Ctrl + Alt + N** | **Start + View** | **Options + Create** |
 | **Oyun içi menü** | **Ctrl + Alt + G** | **Start + View** (oyundayken) | **Options + Create** |
 | **Ekran görüntüsü** | **Ctrl + Alt + S** | Oyun içi menüden | Oyun içi menüden |
 | Pencere / tam ekran | F11 | — | — |

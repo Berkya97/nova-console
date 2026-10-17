@@ -25,6 +25,13 @@ public partial class App : Application
         AppSettings.Use(forced ?? store.LastId);
         L.Init(AppSettings.Current.Language);
 
+        // Nova kapalıyken kısayolu ve kolu dinleyen küçük süreç.
+        if (args.Contains("--watcher"))
+        {
+            Watcher.Run(this);
+            return;
+        }
+
         if (args.Contains("--uninstall"))
         {
             Installer.Uninstall();
@@ -38,6 +45,7 @@ public partial class App : Application
             Shutdown();
             return;
         }
+        Watcher.StopRunning();
         Updater.CleanupOld();
 
         bool background = args.Contains("--background");

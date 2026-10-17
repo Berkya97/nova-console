@@ -84,6 +84,8 @@ public sealed class AppSettings
 
     // 0.3
     public bool BackgroundMode { get; set; } = true;
+    /// <summary>Nova kapatılınca küçük bir dinleyici kalır; kısayol ya da kolla yeniden açılır.</summary>
+    public bool WakeWhenClosed { get; set; } = true;
     public string Language { get; set; } = "tr";
     /// <summary>null: konuma göre otomatik, "off": kapalı, diğer: şehir adı.</summary>
     public string? WeatherCity { get; set; }
