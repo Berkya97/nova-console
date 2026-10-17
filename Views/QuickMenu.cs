@@ -36,6 +36,8 @@ public sealed class QuickMenu : Window
 
     public event Action? ReturnToNova;
     public event Action<string, string>? Notify;
+    /// <summary>Kolu fare ve klavye olarak kullan (başlatıcının giriş penceresi gibi araya girenler için).</summary>
+    public event Action? DesktopModeRequested;
 
     /// <param name="target">Menü açılmadan önce öndeki pencere (oyun).</param>
     public QuickMenu(IntPtr target)
@@ -102,6 +104,7 @@ public sealed class QuickMenu : Window
         AddCard(row, Glyphs.Home, "Nova'ya dön", () => { _closing = true; Close(); ReturnToNova?.Invoke(); });
         AddCard(row, Glyphs.Picture, "Ekran görüntüsü", TakeScreenshot);
         AddCard(row, Glyphs.Videos, "Son 30 saniyeyi kaydet", RecordClip);
+        AddCard(row, Glyphs.Mouse, "Masaüstü modu", () => { Close(); DesktopModeRequested?.Invoke(); });
         AddCard(row, Glyphs.Mute, "Ses −", () => ChangeVolume(-10));
         var vol = AddCard(row, Glyphs.Volume, "Ses +", () => ChangeVolume(10));
         if (canKill) AddCard(row, Glyphs.Close, "Oyunu kapat", KillGame);

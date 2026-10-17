@@ -211,6 +211,21 @@ public static partial class L
         ["Ctrl+Alt+G başka bir uygulamada kullanılıyor; oyun içi menüyü kolda Start+View ile açabilirsin"] = "Ctrl+Alt+G is used by another app; open the in-game menu with Start+View on the controller",
         ["Ctrl+Alt+S başka bir uygulamada kullanılıyor"] = "Ctrl+Alt+S is used by another app",
 
+        // Masaüstü modu ve sistem klavyesi
+        ["Masaüstü modu"] = "Desktop mode",
+        ["Masaüstü modu açık: kol fare oldu (çıkmak için View + R3)"] = "Desktop mode on: the controller is now a mouse (View + R3 to exit)",
+        ["Masaüstü modu kapatıldı"] = "Desktop mode off",
+        ["Ekran klavyesi"] = "On-screen keyboard",
+        ["Öndeki pencereye yazar"] = "Types into the front window",
+        ["Tıkla"] = "Click",
+        ["Sol tık"] = "Left click",
+        ["Sağ tık"] = "Right click",
+        ["Pencere değiştir"] = "Switch window",
+        ["Yavaş"] = "Slow",
+        ["Çık"] = "Exit",
+        ["Bas"] = "Press",
+        ["Klavyeyi kapat"] = "Close keyboard",
+
         // Kullanıcılar
         ["Kim oynuyor?"] = "Who's playing?",
         ["Kullanıcı ekle"] = "Add user",
@@ -275,6 +290,10 @@ public static partial class L
         ["Nova ekranındaki PIN"] = "PIN shown on the Nova screen",
         ["PIN'i Nova'da Kontrol Merkezi › Telefon kartında görebilirsin."] = "You can see the PIN in Nova under Control Center › Phone.",
         ["Yaz ve gönder (arama, ad değiştirme…)"] = "Type and send (search, rename…)",
+        ["Fare"] = "Mouse",
+        ["Kaydır: imleç · Dokun: tıkla · İki parmak: kaydır / sağ tık"] = "Slide: cursor · Tap: click · Two fingers: scroll / right click",
+        ["Nova öndeyken yazılar Nova'ya, başka bir uygulama öndeyken o uygulamaya gider."] = "Text goes to Nova when Nova is in front, otherwise to the app in front.",
+        ["Çok fazla yanlış deneme. Bir dakika sonra tekrar dene."] = "Too many wrong attempts. Try again in a minute.",
         ["Gönder"] = "Send",
         ["Sayfa ▲"] = "Page ▲",
         ["Sayfa ▼"] = "Page ▼",

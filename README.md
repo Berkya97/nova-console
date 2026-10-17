@@ -38,13 +38,15 @@ sonraki sürümleri Nova kendisi indirip kurar.
 - **Kapalıyken de aç:** Nova kapatıldıktan sonra arka planda yaklaşık 9 MB'lık penceresiz bir dinleyici kalır; Ctrl+Alt+N ya da kol kombinasyonuyla Nova yeniden açılır. Simge alanından \"Tamamen kapat\" denince o da kapanır.
 - **Oyun içi hızlı menü:** Oyundayken kolda **Start + View** (ya da Ctrl+Alt+G) ile oyunun üstünde panel açılır: Nova'ya dön, ekran görüntüsü, son 30 saniyeyi kaydet (Xbox Game Bar), ses, oyunu kapat; oturum ve günlük oyun süresi görünür.
 - **Ekran görüntüsü:** Ctrl+Alt+S ile her yerde; Resimler › Nova klasörüne kaydedilir.
+- **Masaüstü modu:** Bir başlatıcının giriş penceresi gibi araya giren pencereler için kol fare ve klavye olur: kolda **View + R3** ya da oyun içi menüden açılır. Ekran klavyesi öne geçmeden öndeki pencereye yazar.
+- **Uykudan dönüş:** Bilgisayar uykudan uyanınca kollar baştan aranır ve kısayollar yeniden kaydedilir.
 - **Kupalar:** Nova'nın kendi kupaları (bronz, gümüş, altın, platin) ve isteğe bağlı Steam başarımları.
 - **Kontrol Merkezi:** Çalan müzik ve kontrolleri, ses, parlaklık, ağ, pil, işlemci / bellek / ekran kartı kullanımı ve sıcaklığı, takvim, hava durumu, uyku zamanlayıcısı, telefonla kumanda, bildirimler.
 - **Arama:** Oyun, uygulama ve tüm dosyalarda; oyun koluyla yazmak için ekran klavyesi.
 - **Hava durumu** üst çubukta (Open-Meteo; konum otomatik ya da şehir adıyla).
 
 **Kullanım kolaylığı**
-- **Telefonla kumanda:** Aynı Wi-Fi'deki telefonun tarayıcısından yön tuşları, A/B/X/Y ve hızlı yazma; PIN korumalı.
+- **Telefonla kumanda:** Aynı Wi-Fi'deki telefonun tarayıcısından yön tuşları, A/B/X/Y, hızlı yazma ve fare için dokunmatik alan; Nova öndeyken yazılar Nova'ya, başka bir uygulama öndeyken o uygulamaya gider. PIN korumalı.
 - **Birden fazla kullanıcı:** "Kim oynuyor?" ekranı; herkesin sabitledikleri, oynama süreleri, kupaları ve ayarları ayrı.
 - **Günlük oyun süresi sınırı** ve **uyku zamanlayıcısı** (uyku ya da kapatma).
 - **Kişiselleştirme:** Renk temaları, duvar kağıdı, arka plan müziği, ana ekrana sabitleme.
@@ -67,10 +69,33 @@ sonraki sürümleri Nova kendisi indirip kurar.
 | **Nova'ya dön / Nova'yı aç** (kapalıyken de) | **Ctrl + Alt + N** | **Start + View** | **Options + Create** |
 | **Oyun içi menü** | **Ctrl + Alt + G** | **Start + View** (oyundayken) | **Options + Create** |
 | **Ekran görüntüsü** | **Ctrl + Alt + S** | Oyun içi menüden | Oyun içi menüden |
+| **Masaüstü modu** aç / kapat | — | **View + R3** | **Create + R3** |
 | Pencere / tam ekran | F11 | — | — |
 
 Xbox ve XInput uyumlu kollar XInput ile, DualShock 4 ve DualSense ise Windows.Gaming.Input ile ek
 program gerekmeden desteklenir.
+
+### Masaüstü modu
+
+Kol fare ve klavye olur; Nova'nın dışındaki bir pencereyle (ör. Steam / EA giriş penceresi) klavye ve
+fare olmadan uğraşmak için. Açıkken kol Nova'yı yönetmez; **Start + View** ile Nova'ya dönünce kapanır.
+
+| Eylem | Xbox kolu | PS kolu |
+|---|---|---|
+| İmleç (basılı tuttukça hızlanır) | Sol çubuk | Sol çubuk |
+| Yavaş / hassas imleç | LT basılıyken | L2 basılıyken |
+| Kaydır | Sağ çubuk | Sağ çubuk |
+| Sol tık (basılı tutunca sürükle) | A | Çarpı |
+| Sağ tık | B | Daire |
+| Ekran klavyesi | X | Kare |
+| Enter | Y | Üçgen |
+| Ok tuşları | D-pad | D-pad |
+| Pencere değiştir (Alt+Tab; art arda bas, bırakınca seçilir) | LB / RB | L1 / R1 |
+| Masaüstü modundan çık | View + R3 | Create + R3 |
+
+Ekran klavyesi açıkken yön tuşlarıyla gezinilir; A tuşa basar, X siler, Y boşluk, B klavyeyi kapatır.
+Klavye öne geçmez, yazılanlar o anda öndeki pencereye gider. Windows, yönetici olarak çalışan
+pencerelere ve UAC onay ekranına başka programların girdi göndermesine izin vermez.
 
 Oyun içi menü pencereli ya da kenarlıksız tam ekran oyunlarda görünür; özel tam ekran modundaki
 bazı oyunlarda görünmeyebilir. "Son 30 saniyeyi kaydet" için Xbox Game Bar'da arka plan kaydı açık olmalı.

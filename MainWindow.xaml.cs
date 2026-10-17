@@ -79,8 +79,15 @@ public partial class MainWindow : Window
         PreviewTextInput += OnTextInput;
         Activated += (_, _) => { if (!_overlays.Any(o => o is not OptionsMenu)) Particles.Resume(); UpdateMusic(); };
         Deactivated += (_, _) => { Particles.Pause(); UpdateMusic(); };
-        _pad.Action += a => { SetDevice(InputKind.Gamepad); if (_quick != null) _quick.Handle(a); else Dispatch(a); };
+        _pad.Action += a =>
+        {
+            SetDevice(InputKind.Gamepad);
+            if (_desktop.Active) _desktop.Nav(a);
+            else if (_quick != null) _quick.Handle(a);
+            else Dispatch(a);
+        };
         _pad.ReturnRequested += OnReturnCombo;
+        _pad.DesktopToggleRequested += ToggleDesktopMode;
         _pad.Start();
         _ambientTimer.Tick += (_, _) => ApplyAmbient();
         MenuScrim.MouseLeftButtonDown += (_, _) => { if (_overlays.LastOrDefault() is OptionsMenu m) m.Close(null); };
@@ -150,7 +157,7 @@ public partial class MainWindow : Window
         Focus();
         _pendingPicker = _forcedProfile == null && _store.Profiles.Count > 1;
         if (_skipBoot) EndBoot(); else PlayBoot();
-        DevScript.RunIfRequested(Root, a => Dispatch(a), DevCommand, Close);
+        DevScript.RunIfRequested(Root, a => { if (_desktop.Active) _desktop.Nav(a); else Dispatch(a); }, DevCommand, Close);
         StartExtras();
         await LoadDataAsync();
         await LoadExtrasAsync();
@@ -164,6 +171,7 @@ public partial class MainWindow : Window
         else if (token == "pad") SetDevice(InputKind.Gamepad);
         else if (token == "kb") SetDevice(InputKind.Keyboard);
         else if (token.StartsWith("type:")) (_overlays.LastOrDefault() as ITextTarget)?.TypeText(token[5..].Replace('_', ' '));
+        else if (DesktopDevCommand(token)) { }
         else if (token.StartsWith("goto:"))
         {
             var p = token[5..].Replace('|', ' ') switch

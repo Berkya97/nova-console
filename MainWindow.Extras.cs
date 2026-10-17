@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using Nova.Core;
 using Nova.Models;
 using Nova.Services;
@@ -24,6 +25,7 @@ public partial class MainWindow
     readonly bool _startHidden, _skipBoot;
     readonly HomeRowView _tv = new() { CountFormat = "{0} servis" };
     readonly RemoteServer _remote = new();
+    DesktopMode _desktop = null!;
     readonly DispatcherTimer _weatherTimer = new() { Interval = TimeSpan.FromMinutes(30) };
     readonly DispatcherTimer _downloadTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     HudWindow _hud = null!;
@@ -34,6 +36,7 @@ public partial class MainWindow
     Updater.Release? _pendingUpdate;
 
     const int HotkeyReturn = 1, HotkeyMenu = 2, HotkeyShot = 3;
+    static readonly (int Id, char Key)[] Hotkeys = { (HotkeyReturn, 'N'), (HotkeyMenu, 'G'), (HotkeyShot, 'S') };
 
     // ───────────────────────────── Kurulum ─────────────────────────────
 
@@ -44,16 +47,33 @@ public partial class MainWindow
         _tray.OpenRequested += BringBack;
         _tray.ExitRequested += QuitCompletely;
 
+        _desktop = new DesktopMode(_pad);
+        _desktop.Changed += on => Toast(Glyphs.Mouse, on ? "Masaüstü modu açık: kol fare oldu (çıkmak için View + R3)" : "Masaüstü modu kapatıldı");
+
         _remote.Pin = Settings.RemotePin;
         _remote.Action += a =>
         {
+            // Masaüstü modunda telefon tuşları kolun masaüstü karşılıklarını yapar, Nova'yı öne getirmez.
+            if (_desktop.Active) { _desktop.Remote(a); return; }
             if (!IsVisible || !IsActive) BringBack();
             SetDevice(InputKind.Gamepad);
             if (_quick != null) _quick.Handle(a); else Dispatch(a);
         };
-        _remote.Text += t => (_overlays.LastOrDefault() as ITextTarget)?.TypeText(t);
-        _remote.Backspace += () => (_overlays.LastOrDefault() as ITextTarget)?.Backspace();
-        _remote.Submit += () => (_overlays.LastOrDefault() as ITextTarget)?.Submit();
+        // Nova öndeyse yazı Nova'nın yazı kutusuna, başka bir uygulama öndeyse SendInput ile o uygulamaya gider.
+        _remote.Text += t => { if (NovaForeground) (_overlays.LastOrDefault() as ITextTarget)?.TypeText(t); else Injector.Type(t); };
+        _remote.Backspace += () => { if (NovaForeground) (_overlays.LastOrDefault() as ITextTarget)?.Backspace(); else Injector.Press(Injector.VK_BACK); };
+        _remote.Submit += () => { if (NovaForeground) (_overlays.LastOrDefault() as ITextTarget)?.Submit(); else Injector.Press(Injector.VK_RETURN); };
+        _remote.Key += k =>
+        {
+            if (k == "desktop") ToggleDesktopMode();
+            else Injector.Press(k == "tab" ? Injector.VK_TAB : Injector.VK_ESCAPE);
+        };
+        _remote.Mouse += (dx, dy, w) =>
+        {
+            if (dx != 0 || dy != 0) Injector.MoveBy(dx, dy);
+            if (w != 0) Injector.Wheel(w);
+        };
+        _remote.Click += right => { if (right) Injector.RightClick(); else Injector.LeftClick(); };
         _remote.Connected += () =>
         {
             Settings.Count("remote", 1);
@@ -72,6 +92,85 @@ public partial class MainWindow
 
         _weatherTimer.Tick += (_, _) => RefreshWeather();
         _downloadTimer.Tick += (_, _) => RefreshDownloads();
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+    }
+
+    /// <summary>Nova'nın bir penceresi (ana pencere ya da oyun içi menü) önde mi.</summary>
+    static bool NovaForeground => Application.Current.Windows.OfType<Window>().Any(w => w.IsActive);
+
+    // ───────────────────────────── Uyku / uyanma ─────────────────────────────
+
+    void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e) => Dispatcher.BeginInvoke(() =>
+    {
+        if (e.Mode == PowerModes.Suspend) _desktop.ReleaseHeld();
+        else if (e.Mode == PowerModes.Resume) OnResume();
+    });
+
+    /// <summary>
+    /// Uykudan dönüş: kablosuz kollar yeniden bağlanırken XInput yuvaları ve PlayStation kol listesi bayatlamış
+    /// olabilir, baştan taranır. Kısayollar da (ör. başka bir oturum araya girdiyse) sessizce yeniden kaydedilir.
+    /// </summary>
+    void OnResume()
+    {
+        _pad.Rescan();
+        uint mods = Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT;
+        foreach (var (id, key) in Hotkeys)
+        {
+            Native.UnregisterHotKey(_hwnd, id);
+            Native.RegisterHotKey(_hwnd, id, mods, key);
+        }
+    }
+
+    // ───────────────────────────── Masaüstü modu ─────────────────────────────
+
+    void ToggleDesktopMode()
+    {
+        Sfx.Confirm();
+        _desktop.Toggle();
+        if (_desktop.Active) Settings.Count("desktopmode", 1);
+    }
+
+    /// <summary>
+    /// Test betiği komutları: desktop, osk, hide, resume, remote:PIN (kaydetmeden başlatır), fg:süreç-ya-da-başlık,
+    /// inject:metin, key:ad, pad:lx,ly,rx,ry[,A+B] (sahte kol durumu), pad:off.
+    /// </summary>
+    bool DesktopDevCommand(string token)
+    {
+        if (token == "desktop") ToggleDesktopMode();
+        else if (token == "osk") _desktop.ToggleKeyboard();
+        else if (token == "hide") Hide();
+        else if (token == "resume") OnResume();
+        else if (token.StartsWith("remote:")) { _remote.Pin = token[7..]; _remote.Start(); }
+        else if (token.StartsWith("fg:"))
+        {
+            var name = token[3..].Replace('|', ' ');
+            var p = Process.GetProcesses().FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero &&
+                (p.ProcessName.Equals(name, StringComparison.OrdinalIgnoreCase) || p.MainWindowTitle == name));
+            if (p != null) Native.ForceForeground(p.MainWindowHandle);
+        }
+        else if (token.StartsWith("inject:")) Injector.Type(token[7..].Replace('_', ' '));
+        else if (token.StartsWith("key:"))
+        {
+            Injector.Press(token[4..] switch
+            {
+                "enter" => Injector.VK_RETURN, "tab" => Injector.VK_TAB, "back" => Injector.VK_BACK,
+                "esc" => Injector.VK_ESCAPE, "up" => Injector.VK_UP, "down" => Injector.VK_DOWN,
+                "left" => Injector.VK_LEFT, _ => Injector.VK_RIGHT,
+            });
+        }
+        else if (token == "pad:off") _desktop.Simulated = null;
+        else if (token.StartsWith("pad:"))
+        {
+            var parts = token[4..].Split(',');
+            double N(int i) => i < parts.Length && double.TryParse(parts[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0;
+            var buttons = PadButtons.None;
+            if (parts.Length > 4)
+                foreach (var b in parts[4].Split('+'))
+                    if (Enum.TryParse<PadButtons>(b, true, out var pb)) buttons |= pb;
+            _desktop.Simulated = new PadState(buttons, N(0), N(1), N(2), N(3));
+        }
+        else return false;
+        return true;
     }
 
     void RegisterHotkeys()
@@ -112,7 +211,9 @@ public partial class MainWindow
 
     void CleanupExtras()
     {
-        foreach (var id in new[] { HotkeyReturn, HotkeyMenu, HotkeyShot }) Native.UnregisterHotKey(_hwnd, id);
+        foreach (var (id, _) in Hotkeys) Native.UnregisterHotKey(_hwnd, id);
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        _desktop.Disable();
         _remote.Stop();
         _tray.Dispose();
         _hud.Close();
@@ -199,6 +300,8 @@ public partial class MainWindow
 
     void OnReturnCombo()
     {
+        // Masaüstü modundan Nova'ya dönerken kol yeniden Nova'yı yönetsin.
+        if (_desktop.Active) _desktop.Disable();
         if (IsActive || _quick != null) return;
         // Nova gizliyse ya da masaüstündeysek doğrudan Nova'yı aç; bir oyun öndeyse hızlı menüyü göster.
         var fg = GetForegroundWindow();
@@ -215,6 +318,7 @@ public partial class MainWindow
         var menu = new QuickMenu(target);
         menu.ReturnToNova += BringBack;
         menu.Notify += (g, t) => Toast(g, t);
+        menu.DesktopModeRequested += () => { if (!_desktop.Active) ToggleDesktopMode(); };
         menu.Closed += (_, _) => { _quick = null; CheckTrophies(); };
         _quick = menu;
         Sfx.Confirm();

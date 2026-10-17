@@ -12,7 +12,7 @@ public sealed class OnScreenKeyboard : StackPanel
     sealed class KeyDef
     {
         public string Text = "";
-        public string Kind = "char"; // char, shift, space, back, done
+        public string Kind = "char"; // char, shift, space, back, done, tab, enter
         public double Units = 1;
         public Border View = null!;
         public TextBlock Label = null!;
@@ -28,8 +28,12 @@ public sealed class OnScreenKeyboard : StackPanel
     public event Action<string>? Typed;
     public event Action? Backspaced;
     public event Action? Done;
+    /// <summary>Sistem klavyesinde Tab ve Enter tuşları ("tab", "enter").</summary>
+    public event Action<string>? Special;
 
     public string DoneLabel { get; init; } = "Tamam";
+    /// <summary>Başka uygulamalara yazmak için alt satıra Tab ve Enter eklenir.</summary>
+    public bool SystemKeys { get; init; }
 
     public OnScreenKeyboard()
     {
@@ -49,13 +53,23 @@ public sealed class OnScreenKeyboard : StackPanel
             : new[] { "1234567890", "qwertyuıopğü", "asdfghjklşi", "zxcvbnmöç.-" };
         foreach (var line in lines)
             _rows.Add(line.Select(ch => new KeyDef { Text = ch.ToString() }).ToList());
-        _rows.Add(new List<KeyDef>
-        {
-            new() { Text = Glyphs.Shift, Kind = "shift", Units = 2 },
-            new() { Text = "Boşluk", Kind = "space", Units = 6 },
-            new() { Text = Glyphs.Backspace, Kind = "back", Units = 2 },
-            new() { Text = DoneLabel, Kind = "done", Units = 2 },
-        });
+        _rows.Add(SystemKeys
+            ? new List<KeyDef>
+            {
+                new() { Text = "Tab", Kind = "tab", Units = 1.5 },
+                new() { Text = Glyphs.Shift, Kind = "shift", Units = 1.5 },
+                new() { Text = "Boşluk", Kind = "space", Units = 4 },
+                new() { Text = Glyphs.Backspace, Kind = "back", Units = 1.5 },
+                new() { Text = "Enter", Kind = "enter", Units = 2 },
+                new() { Text = DoneLabel, Kind = "done", Units = 1.5 },
+            }
+            : new List<KeyDef>
+            {
+                new() { Text = Glyphs.Shift, Kind = "shift", Units = 2 },
+                new() { Text = "Boşluk", Kind = "space", Units = 6 },
+                new() { Text = Glyphs.Backspace, Kind = "back", Units = 2 },
+                new() { Text = DoneLabel, Kind = "done", Units = 2 },
+            });
 
         double maxWidth = _rows.Max(RowWidth);
         foreach (var row in _rows)
@@ -154,6 +168,7 @@ public sealed class OnScreenKeyboard : StackPanel
             case "space": Typed?.Invoke(" "); break;
             case "back": Backspaced?.Invoke(); break;
             case "done": Done?.Invoke(); break;
+            case "tab" or "enter": Special?.Invoke(k.Kind); break;
         }
         Refresh();
     }

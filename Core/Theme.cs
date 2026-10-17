@@ -81,6 +81,8 @@ public static class Glyphs
     public static readonly string Install = "";
     public static readonly string Download = "";
     public static readonly string News = "";
+    public static readonly string Mouse = "";
+    public static readonly string Keyboard = "";
 }
 
 /// <summary>Arka plan renk temaları.</summary>

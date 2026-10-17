@@ -40,13 +40,15 @@ downloads and installs future versions by itself.
 - **Open even when closed:** After Nova is closed, a windowless listener of about 9 MB stays in the background; Ctrl+Alt+N or the gamepad combo reopens Nova. Choosing "Quit completely" from the tray icon closes it too.
 - **In-game quick menu:** While playing, **Start + View** on the gamepad (or Ctrl+Alt+G) opens a panel over the game: back to Nova, screenshot, record the last 30 seconds (Xbox Game Bar), volume, close game; shows session and daily playtime.
 - **Screenshots:** Ctrl+Alt+S anywhere; saved to Pictures › Nova.
+- **Desktop mode:** The gamepad becomes a mouse and keyboard for windows that get in the way, such as a launcher's login dialog: **View + R3** on the gamepad or from the in-game menu. The on-screen keyboard types into the window in front without taking focus.
+- **Wake from sleep:** When the PC wakes up, controllers are searched for again and hotkeys are re-registered.
 - **Trophies:** Nova's own trophies (bronze, silver, gold, platinum) and optional Steam achievements.
 - **Control Center:** Now playing with controls, volume, brightness, network, battery, CPU / memory / GPU usage and temperature, calendar, weather, sleep timer, phone remote, notifications.
 - **Search:** Across games, apps and all files; on-screen keyboard for typing with a gamepad.
 - **Weather** in the top bar (Open-Meteo; automatic location or by city name).
 
 **Ease of use**
-- **Phone remote:** D-pad, A/B/X/Y and quick typing from the browser of a phone on the same Wi-Fi; PIN protected.
+- **Phone remote:** D-pad, A/B/X/Y, quick typing and a touchpad for the mouse from the browser of a phone on the same Wi-Fi; text goes to Nova when Nova is in front, otherwise to the app in front. PIN protected.
 - **Multiple users:** A "Who's playing?" screen; everyone has their own pins, playtime, trophies and settings.
 - **Daily play time limit** and **sleep timer** (sleep or shut down).
 - **Personalization:** Color themes, wallpaper, background music, pinning to the home screen.
@@ -69,10 +71,35 @@ downloads and installs future versions by itself.
 | **Back to Nova / Open Nova** (even when closed) | **Ctrl + Alt + N** | **Start + View** | **Options + Create** |
 | **In-game menu** | **Ctrl + Alt + G** | **Start + View** (in game) | **Options + Create** |
 | **Screenshot** | **Ctrl + Alt + S** | From the in-game menu | From the in-game menu |
+| **Desktop mode** on / off | — | **View + R3** | **Create + R3** |
 | Window / fullscreen | F11 | — | — |
 
 Xbox and XInput-compatible controllers are supported through XInput, and DualShock 4 and DualSense
 through Windows.Gaming.Input, with no extra software required.
+
+### Desktop mode
+
+The gamepad becomes a mouse and keyboard, for dealing with a window outside Nova (for example a
+Steam / EA login dialog) without a keyboard or mouse. While it is on, the gamepad doesn't control
+Nova; going back to Nova with **Start + View** turns it off.
+
+| Action | Xbox controller | PlayStation controller |
+|---|---|---|
+| Cursor (speeds up while held) | Left stick | Left stick |
+| Slow / precise cursor | Hold LT | Hold L2 |
+| Scroll | Right stick | Right stick |
+| Left click (hold to drag) | A | Cross |
+| Right click | B | Circle |
+| On-screen keyboard | X | Square |
+| Enter | Y | Triangle |
+| Arrow keys | D-pad | D-pad |
+| Switch window (Alt+Tab; press repeatedly, release to pick) | LB / RB | L1 / R1 |
+| Exit desktop mode | View + R3 | Create + R3 |
+
+With the on-screen keyboard open, move with the directions; A presses a key, X deletes, Y types a
+space and B closes the keyboard. The keyboard never takes focus, so text goes to the window in
+front. Windows doesn't let programs send input to windows running as administrator or to the UAC
+prompt.
 
 The in-game menu appears over windowed and borderless fullscreen games; it may not appear in some
 games running in exclusive fullscreen. "Record the last 30 seconds" requires background recording

@@ -9,7 +9,8 @@ namespace Nova.Services;
 
 /// <summary>
 /// Telefonla kumanda: yerel ağda küçük bir web sunucusu. Telefonun tarayıcısında açılan sayfa
-/// yön tuşları, A/B/X/Y ve yazı kutusu sunar. Erişim, Nova ekranında görünen PIN ile korunur.
+/// yön tuşları, A/B/X/Y, yazı kutusu ve fare için dokunmatik alan sunar. Nova öndeyken yazılar Nova'ya,
+/// başka bir uygulama öndeyken o uygulamaya gider. Erişim, Nova ekranında görünen PIN ile korunur.
 /// </summary>
 public sealed class RemoteServer
 {
@@ -18,12 +19,20 @@ public sealed class RemoteServer
     TcpListener? _listener;
     CancellationTokenSource? _cts;
     readonly HashSet<string> _tokens = new();
+    int _failedLogins;
+    DateTime _lockedUntil;
 
     public event Action<NavAction>? Action;
     public event Action<string>? Text;
     public event Action? Backspace;
     public event Action? Submit;
     public event Action? Connected;
+    /// <summary>Özel tuşlar: "tab", "esc", "desktop" (masaüstü modunu aç / kapat).</summary>
+    public event Action<string>? Key;
+    /// <summary>Dokunmatik alandan imleç hareketi (dx, dy) ve tekerlek.</summary>
+    public event Action<int, int, int>? Mouse;
+    /// <summary>Dokunmatik alanda dokunuş: false sol, true sağ tık.</summary>
+    public event Action<bool>? Click;
 
     public string Pin { get; set; } = "0000";
     public bool Running => _listener != null;
@@ -100,21 +109,33 @@ public sealed class RemoteServer
                 if (method == null) return;
                 var cookie = headers.GetValueOrDefault("cookie") ?? "";
                 var token = cookie.Split(';').Select(c => c.Trim()).FirstOrDefault(c => c.StartsWith("nova="))?[5..];
-                bool authed = token != null && _tokens.Contains(token);
+                bool authed;
+                lock (_tokens) authed = token != null && _tokens.Contains(token);
                 var route = path.Split('?')[0];
                 var query = path.Contains('?') ? path[(path.IndexOf('?') + 1)..] : "";
 
                 if (method == "POST" && route == "/login")
                 {
                     var pin = WebUtility.UrlDecode(body.Split('=').ElementAtOrDefault(1) ?? "");
-                    if (pin == Pin)
+                    // Telefon artık başka uygulamalara da yazabildiği için PIN denemeleri sınırlanır.
+                    bool locked;
+                    lock (_tokens) locked = DateTime.UtcNow < _lockedUntil;
+                    if (!locked && pin == Pin)
                     {
+                        lock (_tokens) _failedLogins = 0;
                         var t = Guid.NewGuid().ToString("N");
                         lock (_tokens) _tokens.Add(t);
                         OnUi(() => Connected?.Invoke());
                         await Write(stream, "303 See Other", "text/plain", "", $"Location: /\r\nSet-Cookie: nova={t}; Path=/; Max-Age=2592000\r\n");
                     }
-                    else await Write(stream, "200 OK", "text/html; charset=utf-8", Page.Login(true));
+                    else
+                    {
+                        lock (_tokens)
+                        {
+                            if (!locked && ++_failedLogins >= 5) { _failedLogins = 0; _lockedUntil = DateTime.UtcNow.AddMinutes(1); locked = true; }
+                        }
+                        await Write(stream, "200 OK", "text/html; charset=utf-8", Page.Login(true, locked));
+                    }
                     return;
                 }
                 if (!authed)
@@ -133,6 +154,17 @@ public sealed class RemoteServer
                         if (Enum.TryParse<NavAction>(k, true, out var a)) OnUi(() => Action?.Invoke(a));
                         else if (k == "backspace") OnUi(() => Backspace?.Invoke());
                         else if (k == "enter") OnUi(() => Submit?.Invoke());
+                        else if (k is "tab" or "esc" or "desktop") OnUi(() => Key?.Invoke(k));
+                        break;
+                    case "/m" when method == "POST":
+                        var q = query.Split('&').Select(p => p.Split('=')).Where(p => p.Length == 2).GroupBy(p => p[0]).ToDictionary(g => g.Key, g => g.First()[1]);
+                        int Num(string key) => q.TryGetValue(key, out var v) && int.TryParse(v, out var n) ? Math.Clamp(n, -4000, 4000) : 0;
+                        if (q.TryGetValue("c", out var c)) OnUi(() => Click?.Invoke(c == "r"));
+                        else
+                        {
+                            int dx = Num("dx"), dy = Num("dy"), w = Num("w");
+                            if (dx != 0 || dy != 0 || w != 0) OnUi(() => Mouse?.Invoke(dx, dy, w));
+                        }
                         break;
                     case "/t" when method == "POST":
                         var text = body;
@@ -213,16 +245,20 @@ public sealed class RemoteServer
             input{font:inherit;font-size:18px;width:100%;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.2);
               background:rgba(255,255,255,.08);color:#fff;outline:none;user-select:text}
             .muted{opacity:.6;font-size:14px;margin-top:8px;text-align:center}
+            #pad{width:100%;max-width:420px;height:220px;border-radius:22px;border:1px dashed rgba(255,255,255,.3);
+              background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;text-align:center;
+              font-size:14px;opacity:.85;margin-bottom:12px;touch-action:none;padding:0 24px}
+            h2{font-weight:400;font-size:15px;letter-spacing:.2em;opacity:.6;margin:16px 0 10px;text-transform:uppercase}
             </style>
             """;
 
-        public static string Login(bool wrong) => $$"""
+        public static string Login(bool wrong, bool locked = false) => $$"""
             <!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Nova</title>{{Style}}</head><body>
             <h1>NOVA</h1>
             <form method="post" action="/login" style="width:100%;max-width:320px">
               <input name="pin" inputmode="numeric" maxlength="4" autofocus placeholder="{{L.T("Nova ekranındaki PIN")}}">
               <div class="row" style="margin-top:12px"><button type="submit">{{L.T("Bağlan")}}</button></div>
-              {{(wrong ? $"<div class=\"muted\" style=\"color:#f0626a;opacity:1\">{L.T("PIN yanlış")}</div>" : "")}}
+              {{(wrong ? $"<div class=\"muted\" style=\"color:#f0626a;opacity:1\">{L.T(locked ? "Çok fazla yanlış deneme. Bir dakika sonra tekrar dene." : "PIN yanlış")}</div>" : "")}}
               <div class="muted">{{L.T("PIN'i Nova'da Kontrol Merkezi › Telefon kartında görebilirsin.")}}</div>
             </form></body></html>
             """;
@@ -244,6 +280,11 @@ public sealed class RemoteServer
             <div class="row"><input id="t" placeholder="{{L.T("Yaz ve gönder (arama, ad değiştirme…)")}}" autocomplete="off"></div>
             <div class="row"><button id="send">{{L.T("Gönder")}}</button><button data-k="backspace">⌫</button><button data-k="enter">↵</button></div>
             <div class="row"><button data-k="PageUp">{{L.T("Sayfa ▲")}}</button><button data-k="Menu">⏻ {{L.T("Güç")}}</button><button data-k="PageDown">{{L.T("Sayfa ▼")}}</button></div>
+            <h2>{{L.T("Fare")}}</h2>
+            <div id="pad">{{L.T("Kaydır: imleç · Dokun: tıkla · İki parmak: kaydır / sağ tık")}}</div>
+            <div class="row"><button id="lc">{{L.T("Sol tık")}}</button><button id="rc">{{L.T("Sağ tık")}}</button></div>
+            <div class="row"><button data-k="tab">Tab</button><button data-k="esc">Esc</button><button data-k="desktop">{{L.T("Masaüstü modu")}}</button></div>
+            <div class="muted">{{L.T("Nova öndeyken yazılar Nova'ya, başka bir uygulama öndeyken o uygulamaya gider.")}}</div>
             <script>
             const post=(u,b)=>fetch(u,{method:'POST',body:b||''});
             document.querySelectorAll('[data-k]').forEach(el=>{
@@ -254,6 +295,24 @@ public sealed class RemoteServer
             const send=()=>{ if(t.value){ post('/t',t.value); t.value=''; } };
             document.getElementById('send').onclick=send;
             t.addEventListener('keydown',e=>{ if(e.key==='Enter'){ send(); post('/a?k=enter'); } });
+            // Dokunmatik alan: hareketler biriktirilip aynı anda tek istek olacak şekilde gönderilir.
+            const pad=document.getElementById('pad');
+            let dx=0,dy=0,w=0,busy=false,last=null,start=0,moved=false,fingers=0;
+            const flush=()=>{ if(busy||(!dx&&!dy&&!w)) return; busy=true;
+              const u='/m?dx='+Math.round(dx)+'&dy='+Math.round(dy)+'&w='+Math.round(w); dx=dy=w=0;
+              post(u).finally(()=>busy=false); };
+            setInterval(flush,30);
+            const mid=ts=>{let x=0,y=0;for(const p of ts){x+=p.clientX;y+=p.clientY;}return {x:x/ts.length,y:y/ts.length};};
+            pad.addEventListener('touchstart',e=>{e.preventDefault(); if(!fingers){start=Date.now();moved=false;}
+              fingers=Math.max(fingers,e.touches.length); last=mid(e.touches);},{passive:false});
+            pad.addEventListener('touchmove',e=>{e.preventDefault(); const m=mid(e.touches); const ddx=m.x-last.x, ddy=m.y-last.y; last=m;
+              if(Math.abs(ddx)+Math.abs(ddy)>1) moved=true;
+              if(e.touches.length>=2) w-=ddy*4; else { const k=1.6+Math.min(2.4,Math.hypot(ddx,ddy)/12); dx+=ddx*k; dy+=ddy*k; } },{passive:false});
+            pad.addEventListener('touchend',e=>{e.preventDefault(); if(e.touches.length){last=mid(e.touches);return;}
+              if(!moved&&Date.now()-start<300){navigator.vibrate&&navigator.vibrate(12); post('/m?c='+(fingers>=2?'r':'l'));}
+              fingers=0;},{passive:false});
+            document.getElementById('lc').onclick=()=>post('/m?c=l');
+            document.getElementById('rc').onclick=()=>post('/m?c=r');
             </script></body></html>
             """;
     }
