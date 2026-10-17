@@ -1,0 +1,13 @@
+# Derleme çıktıları
+bin/
+obj/
+publish/
+publish-standalone/
+*.zip
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo

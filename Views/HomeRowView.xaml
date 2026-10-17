@@ -1,0 +1,71 @@
+<UserControl x:Class="Nova.Views.HomeRowView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+    <Grid>
+        <!-- Yatay kart satırı -->
+        <Canvas x:Name="RowCanvas" VerticalAlignment="Top" Margin="0,124,0,0" Height="180">
+            <Canvas.OpacityMask>
+                <LinearGradientBrush MappingMode="Absolute" StartPoint="0,0" EndPoint="1920,0">
+                    <GradientStop Color="#00000000" Offset="0.0"/>
+                    <GradientStop Color="#FF000000" Offset="0.058"/>
+                    <GradientStop Color="#FF000000" Offset="1"/>
+                </LinearGradientBrush>
+            </Canvas.OpacityMask>
+            <ItemsControl x:Name="Row" Canvas.Left="120" Canvas.Top="14"
+                          ItemTemplate="{StaticResource RowTileTemplate}" Focusable="False">
+                <ItemsControl.RenderTransform>
+                    <TranslateTransform x:Name="RowShift"/>
+                </ItemsControl.RenderTransform>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </Canvas>
+
+        <!-- Seçili öğenin detayı -->
+        <StackPanel x:Name="Detail" Margin="120,340,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="980">
+            <StackPanel.RenderTransform>
+                <TranslateTransform x:Name="DetailShift"/>
+            </StackPanel.RenderTransform>
+            <Grid Height="190" HorizontalAlignment="Left">
+                <Image x:Name="Logo" MaxWidth="620" MaxHeight="190" Stretch="Uniform"
+                       HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="Collapsed">
+                    <Image.Effect>
+                        <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6"/>
+                    </Image.Effect>
+                </Image>
+                <TextBlock x:Name="BigTitle" FontSize="70" FontWeight="Light" TextWrapping="Wrap"
+                           TextTrimming="CharacterEllipsis" MaxHeight="180" VerticalAlignment="Bottom"
+                           LineHeight="80" LineStackingStrategy="BlockLineHeight">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.5"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Grid>
+            <TextBlock x:Name="Meta" FontSize="22" Foreground="{StaticResource TextDim}" Margin="2,20,0,0"
+                       TextTrimming="CharacterEllipsis"/>
+            <StackPanel Orientation="Horizontal" Margin="0,44,0,0">
+                <Border x:Name="PrimaryBtn" Background="White" CornerRadius="32" Height="64" Padding="46,0" Cursor="Hand">
+                    <Border.Effect>
+                        <DropShadowEffect Color="White" BlurRadius="34" ShadowDepth="0" Opacity="0.35"/>
+                    </Border.Effect>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock x:Name="ActionGlyph" Style="{StaticResource GlyphText}" Foreground="#0B0F1A" FontSize="20"/>
+                        <TextBlock x:Name="ActionText" Foreground="#0B0F1A" FontSize="22" FontWeight="SemiBold"
+                                   Margin="14,0,0,2" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="MoreBtn" Width="64" Height="64" CornerRadius="32" Background="#2EFFFFFF"
+                        Margin="18,0,0,0" Cursor="Hand">
+                    <TextBlock Text="&#xE712;" Style="{StaticResource GlyphText}" FontSize="22"/>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+
+        <TextBlock x:Name="CountText" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,120,100"
+                   FontSize="18" Foreground="{StaticResource TextFaint}"/>
+    </Grid>
+</UserControl>

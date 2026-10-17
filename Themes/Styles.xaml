@@ -1,0 +1,167 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <FontFamily x:Key="UiFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <SolidColorBrush x:Key="TextDim" Color="#B0FFFFFF"/>
+    <SolidColorBrush x:Key="TextFaint" Color="#70FFFFFF"/>
+
+    <CubicEase x:Key="EaseOut" EasingMode="EaseOut"/>
+
+    <Style x:Key="GlyphText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="CaptionText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{StaticResource TextFaint}"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Izgara kartı (Uygulamalar, Dosyalar) -->
+    <DataTemplate x:Key="GridTileTemplate">
+        <Grid Width="190" Height="232" Background="Transparent">
+            <Grid x:Name="Card" Width="160" Height="160" VerticalAlignment="Top" Margin="0,16,0,0"
+                  RenderTransformOrigin="0.5,0.5">
+                <Grid.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Grid.RenderTransform>
+                <Border x:Name="Ring" CornerRadius="18" BorderBrush="White" BorderThickness="3" Margin="-7"
+                        Visibility="Collapsed" Opacity="0">
+                    <Border.Effect>
+                        <DropShadowEffect Color="White" BlurRadius="26" ShadowDepth="0" Opacity="0.5"/>
+                    </Border.Effect>
+                </Border>
+                <Border CornerRadius="12" Background="{Binding TileBrush}"/>
+                <Border CornerRadius="12">
+                    <Border.Background>
+                        <ImageBrush ImageSource="{Binding FillImage}" Stretch="UniformToFill"/>
+                    </Border.Background>
+                </Border>
+                <Image Source="{Binding IconImage}" Margin="34"/>
+                <TextBlock Text="{Binding Glyph}" Style="{StaticResource GlyphText}" FontSize="56"/>
+                <Border Width="30" Height="30" CornerRadius="15" Background="#F2FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-9,-9,0" Visibility="{Binding PinVisibility}"><TextBlock Text="&#xE718;" Style="{StaticResource GlyphText}" Foreground="#0B0F1A" FontSize="14"/></Border>
+                <Grid VerticalAlignment="Bottom" Margin="14,0,14,14" Height="6" Visibility="{Binding UsageVisibility}">
+                    <Border CornerRadius="3" Background="#45FFFFFF"/>
+                    <Border CornerRadius="3" Background="White" HorizontalAlignment="Left" Width="{Binding UsageWidth}"/>
+                </Grid>
+            </Grid>
+            <StackPanel VerticalAlignment="Top" Margin="8,188,8,0">
+                <TextBlock x:Name="Name" Text="{Binding Title}" FontSize="16" Foreground="#BFFFFFFF"
+                           TextAlignment="Center" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                           MaxHeight="40" LineHeight="20" LineStackingStrategy="BlockLineHeight"/>
+                <TextBlock Text="{Binding Caption}" Style="{StaticResource CaptionText}" Margin="0,1,0,0"/>
+            </StackPanel>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter TargetName="Ring" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="Name" Property="Foreground" Value="White"/>
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Ring" Storyboard.TargetProperty="Opacity"
+                                             To="1" Duration="0:0:0.18"/>
+                            <DoubleAnimation Storyboard.TargetName="Card"
+                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                             To="1.07" Duration="0:0:0.22" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="Card"
+                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                             To="1.07" Duration="0:0:0.22" EasingFunction="{StaticResource EaseOut}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Ring" Storyboard.TargetProperty="Opacity"
+                                             To="0" Duration="0:0:0.1"/>
+                            <DoubleAnimation Storyboard.TargetName="Card"
+                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                             To="1" Duration="0:0:0.2" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="Card"
+                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                             To="1" Duration="0:0:0.2" EasingFunction="{StaticResource EaseOut}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- Ana ekran satır kartı (Oyunlar, Medya): seçilince büyür, sağında başlık açılır -->
+    <DataTemplate x:Key="RowTileTemplate">
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" Background="Transparent">
+            <Grid x:Name="Box" Width="104" Height="104" VerticalAlignment="Top">
+                <Border x:Name="Ring" CornerRadius="20" BorderBrush="White" BorderThickness="3" Margin="-7"
+                        Visibility="Collapsed" Opacity="0">
+                    <Border.Effect>
+                        <DropShadowEffect Color="White" BlurRadius="30" ShadowDepth="0" Opacity="0.55"/>
+                    </Border.Effect>
+                </Border>
+                <Border CornerRadius="14" Background="{Binding TileBrush}"/>
+                <Border CornerRadius="14">
+                    <Border.Background>
+                        <ImageBrush ImageSource="{Binding FillImage}" Stretch="UniformToFill"/>
+                    </Border.Background>
+                </Border>
+                <Image Source="{Binding IconImage}" Margin="20"/>
+                <TextBlock Text="{Binding Glyph}" Style="{StaticResource GlyphText}" FontSize="44"/>
+                <Border Width="30" Height="30" CornerRadius="15" Background="#F2FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-9,-9,0" Visibility="{Binding PinVisibility}"><TextBlock Text="&#xE718;" Style="{StaticResource GlyphText}" Foreground="#0B0F1A" FontSize="14"/></Border>
+            </Grid>
+            <Grid x:Name="TitleArea" Width="0" Opacity="0" ClipToBounds="True">
+                <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="SemiBold" Width="290"
+                           Margin="26,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                           TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="76"/>
+            </Grid>
+        </StackPanel>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter TargetName="Ring" Property="Visibility" Value="Visible"/>
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Box" Storyboard.TargetProperty="Width"
+                                             To="148" Duration="0:0:0.3" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="Box" Storyboard.TargetProperty="Height"
+                                             To="148" Duration="0:0:0.3" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="TitleArea" Storyboard.TargetProperty="Width"
+                                             To="330" Duration="0:0:0.3" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="TitleArea" Storyboard.TargetProperty="Opacity"
+                                             To="1" BeginTime="0:0:0.08" Duration="0:0:0.25"/>
+                            <DoubleAnimation Storyboard.TargetName="Ring" Storyboard.TargetProperty="Opacity"
+                                             To="1" BeginTime="0:0:0.1" Duration="0:0:0.2"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="Box" Storyboard.TargetProperty="Width"
+                                             To="104" Duration="0:0:0.25" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="Box" Storyboard.TargetProperty="Height"
+                                             To="104" Duration="0:0:0.25" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="TitleArea" Storyboard.TargetProperty="Width"
+                                             To="0" Duration="0:0:0.25" EasingFunction="{StaticResource EaseOut}"/>
+                            <DoubleAnimation Storyboard.TargetName="TitleArea" Storyboard.TargetProperty="Opacity"
+                                             To="0" Duration="0:0:0.1"/>
+                            <DoubleAnimation Storyboard.TargetName="Ring" Storyboard.TargetProperty="Opacity"
+                                             To="0" Duration="0:0:0.1"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+</ResourceDictionary>
