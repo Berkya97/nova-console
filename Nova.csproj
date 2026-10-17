@@ -13,7 +13,7 @@
     <AssemblyName>Nova</AssemblyName>
     <RootNamespace>Nova</RootNamespace>
     <Product>Nova</Product>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <ApplicationIcon>Assets\nova.ico</ApplicationIcon>
   </PropertyGroup>
 

@@ -94,6 +94,7 @@ public partial class MainWindow : Window
         SearchBtn.MouseLeftButtonUp += (_, _) => { if (_overlays.Count == 0) OpenSearch(); };
         ControlBtn.MouseLeftButtonUp += (_, _) => { if (_overlays.Count == 0) OpenControlCenter(); };
         PlaytimeTracker.Recorded += OnPlaytimeRecorded;
+        PlaytimeTracker.Started += OnGameStarted;
         InitExtras();
     }
 
@@ -660,6 +661,8 @@ public partial class MainWindow : Window
     {
         var target = item.LaunchUri ?? item.Path;
         if (target == null) return;
+        // Kol artık başlatılan uygulamanın; masaüstü modu açık kalırsa oyunda imleç oynar, LB/RB pencere değiştirir.
+        _desktop.Disable();
         try
         {
             var psi = item.LaunchArgs != null && item.Path != null

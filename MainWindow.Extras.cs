@@ -121,6 +121,21 @@ public partial class MainWindow
         }
     }
 
+    // ───────────────────────────── Oyun başladı ─────────────────────────────
+
+    /// <summary>
+    /// Başlatılan oyunun süreci göründü. Oyun bir başlatıcı (ör. EA app) üzerinden açıldığında Windows ona
+    /// odağı vermeyebilir; o zaman Nova etkin pencere olarak kalır ve kolu oyunla birlikte o da okur
+    /// (menüde gezinme sesleri gelir). Bu durumda Nova kenara çekilir, kola oyun kalır.
+    /// </summary>
+    void OnGameStarted(string title)
+    {
+        _desktop.Disable();
+        if (!IsVisible || !IsActive) return;
+        if (Settings.BackgroundMode) HideToTray();
+        else WindowState = WindowState.Minimized;
+    }
+
     // ───────────────────────────── Masaüstü modu ─────────────────────────────
 
     void ToggleDesktopMode()

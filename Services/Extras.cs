@@ -31,6 +31,8 @@ public static class PlaytimeTracker
     static string _warnedDay = "", _warnedSoonDay = "";
 
     public static event Action<string, double>? Recorded;
+    /// <summary>Başlatılan oyunun süreci ilk kez görüldü (oyun adı).</summary>
+    public static event Action<string>? Started;
     /// <summary>Günlük oyun süresi sınırı uyarısı (mesaj).</summary>
     public static event Action<string>? LimitWarning;
 
@@ -49,13 +51,15 @@ public static class PlaytimeTracker
             Key = game.Key, Dir = dir, Title = game.Title, Launched = DateTime.UtcNow,
             CountPlaytime = !game.Key.StartsWith("steam:"), // Steam süresini zaten kendisi tutuyor
         });
-        if (_timer == null)
-        {
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
-            _timer.Tick += async (_, _) => await Tick();
-        }
+        _timer ??= new DispatcherTimer();
+        _timer.Tick -= OnTick;
+        _timer.Tick += OnTick;
+        // Oyun görünene kadar sık bak: açılır açılmaz Nova kenara çekilebilsin.
+        _timer.Interval = TimeSpan.FromSeconds(2);
         _timer.Start();
     }
+
+    static async void OnTick(object? sender, EventArgs e) => await Tick();
 
     static async Task Tick()
     {
@@ -71,7 +75,7 @@ public static class PlaytimeTracker
                 bool running = paths.Any(p => p.StartsWith(x.Dir, StringComparison.OrdinalIgnoreCase));
                 if (running)
                 {
-                    if (x.Seen == null) { x.Seen = x.LastTick = now; continue; }
+                    if (x.Seen == null) { x.Seen = x.LastTick = now; Started?.Invoke(x.Title); continue; }
                     s.AddDailyPlay((now - x.LastTick!.Value).TotalMinutes);
                     x.LastTick = now;
                 }
@@ -90,6 +94,7 @@ public static class PlaytimeTracker
             }
             CheckLimit(s);
             if (Sessions.Count == 0) _timer?.Stop();
+            else if (_timer != null && Sessions.All(x => x.Seen != null)) _timer.Interval = TimeSpan.FromSeconds(10);
         }
         finally { _busy = false; }
     }
