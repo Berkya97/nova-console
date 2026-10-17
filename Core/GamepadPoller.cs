@@ -112,7 +112,8 @@ public sealed class GamepadPoller
         }
         _comboHeld = combo;
 
-        bool active = Application.Current?.MainWindow is { IsActive: true };
+        // Nova'nın herhangi bir penceresi (ana pencere ya da oyun içi menü) öndeyse kol girdisi işlenir.
+        bool active = Application.Current?.Windows.OfType<Window>().Any(w => w.IsActive) == true;
         if (!active || _suppressUntilRelease)
         {
             if (!cur.Any(b => b)) _suppressUntilRelease = false;

@@ -53,9 +53,14 @@ public partial class MainWindow : Window
 
     static AppSettings Settings => AppSettings.Current;
 
-    public MainWindow()
+    public MainWindow(ProfileStore store, string? forcedProfile, bool startHidden, bool skipBoot)
     {
+        _store = store;
+        _forcedProfile = forcedProfile;
+        _startHidden = startHidden;
+        _skipBoot = skipBoot;
         InitializeComponent();
+        Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/nova.ico"));
         _glowFront = GlowA; _glowBack = GlowB;
         _heroFront = HeroA; _heroBack = HeroB;
 
@@ -74,13 +79,15 @@ public partial class MainWindow : Window
         PreviewTextInput += OnTextInput;
         Activated += (_, _) => { if (!_overlays.Any(o => o is not OptionsMenu)) Particles.Resume(); UpdateMusic(); };
         Deactivated += (_, _) => { Particles.Pause(); UpdateMusic(); };
-        _pad.Action += a => { SetDevice(InputKind.Gamepad); Dispatch(a); };
-        _pad.ReturnRequested += () => { if (!IsActive) BringBack(); };
+        _pad.Action += a => { SetDevice(InputKind.Gamepad); if (_quick != null) _quick.Handle(a); else Dispatch(a); };
+        _pad.ReturnRequested += OnReturnCombo;
+        _pad.Start();
         _ambientTimer.Tick += (_, _) => ApplyAmbient();
         MenuScrim.MouseLeftButtonDown += (_, _) => { if (_overlays.LastOrDefault() is OptionsMenu m) m.Close(null); };
         SearchBtn.MouseLeftButtonUp += (_, _) => { if (_overlays.Count == 0) OpenSearch(); };
         ControlBtn.MouseLeftButtonUp += (_, _) => { if (_overlays.Count == 0) OpenControlCenter(); };
         PlaytimeTracker.Recorded += OnPlaytimeRecorded;
+        InitExtras();
     }
 
     // ───────────────────────────── Başlangıç ─────────────────────────────
@@ -91,20 +98,20 @@ public partial class MainWindow : Window
         _hwnd = new WindowInteropHelper(this).Handle;
         HwndSource.FromHwnd(_hwnd)?.AddHook(WndProc);
         // Ctrl+Alt+N: oyundayken bile Nova'yı öne getirir.
-        Native.RegisterHotKey(_hwnd, 1, Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT, 'N');
+        RegisterHotkeys();
     }
 
     protected override void OnClosed(EventArgs e)
     {
-        Native.UnregisterHotKey(_hwnd, 1);
+        CleanupExtras();
         base.OnClosed(e);
     }
 
     IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == Native.WM_HOTKEY && wParam.ToInt32() == 1)
+        if (msg == Native.WM_HOTKEY)
         {
-            BringBack();
+            OnHotkey(wParam.ToInt32());
             handled = true;
         }
         else if (msg == Native.WM_DEVICECHANGE && lParam != IntPtr.Zero &&
@@ -123,8 +130,10 @@ public partial class MainWindow : Window
         return IntPtr.Zero;
     }
 
-    void BringBack()
+    public void BringBack()
     {
+        _quick?.Close();
+        if (!IsVisible) Show();
         if (WindowState == WindowState.Minimized)
             WindowState = WindowStyle == WindowStyle.None ? WindowState.Maximized : WindowState.Normal;
         Native.ForceForeground(_hwnd);
@@ -137,24 +146,22 @@ public partial class MainWindow : Window
     {
         BuildTabs();
         StartClock();
-        var user = Environment.UserName;
-        UserText.Text = user;
-        AvatarText.Text = user.Length > 0 ? user[..1].ToUpper(Fmt.Tr) : "?";
-        ApplyTheme();
-        ApplyWallpaper();
-        _music.Configure(Settings.MusicPath, Settings.MusicVolume);
+        ApplyProfileVisuals();
         Focus();
-        _pad.Start();
-        PlayBoot();
+        _pendingPicker = _forcedProfile == null && _store.Profiles.Count > 1;
+        if (_skipBoot) EndBoot(); else PlayBoot();
         DevScript.RunIfRequested(Root, a => Dispatch(a), DevCommand, Close);
-        LoadAvatar();
+        StartExtras();
         await LoadDataAsync();
+        await LoadExtrasAsync();
     }
 
     /// <summary>Test / tanıtım betiği komutları ('|' yollarda boşluk yerine geçer).</summary>
     void DevCommand(string token)
     {
-        if (token == "pad") SetDevice(InputKind.Gamepad);
+        if (token == "trophies") OpenTrophies(null, null);
+        else if (token == "picker") ShowProfilePicker(initial: false);
+        else if (token == "pad") SetDevice(InputKind.Gamepad);
         else if (token == "kb") SetDevice(InputKind.Keyboard);
         else if (token.StartsWith("type:")) (_overlays.LastOrDefault() as ITextTarget)?.TypeText(token[5..].Replace('_', ' '));
         else if (token.StartsWith("goto:"))
@@ -179,14 +186,6 @@ public partial class MainWindow : Window
         }
     }
 
-    async void LoadAvatar()
-    {
-        var pic = await Task.Run(AccountPicture.Load);
-        if (pic == null) return;
-        AvatarPhoto.Fill = new ImageBrush(pic) { Stretch = Stretch.UniformToFill };
-        AvatarPhoto.Visibility = Visibility.Visible;
-        AvatarText.Visibility = Visibility.Collapsed;
-    }
 
     void BuildTabs()
     {
@@ -208,12 +207,18 @@ public partial class MainWindow : Window
         _files.OpenFile += OnActivated;
         _files.Error += msg => { Sfx.Bump(); Toast(Glyphs.Error, msg); };
         _files.FolderOptions += () => ShowFolderOptions();
+        _files.FolderOpened += () => { Settings.Count("folders", 1); CheckTrophies(); };
+
+        _tv.Activated += OnActivated;
+        _tv.OptionsRequested += ShowItemOptions;
+        _tv.SelectionChanged += OnSelectionChanged;
         _files.Grid.OptionsRequested += ShowItemOptions;
         _files.Grid.SelectionChanged += OnSelectionChanged;
 
         AddTab("Oyunlar", _games, _games);
         AddTab("Uygulamalar", _apps, _apps);
         AddTab("Medya", _media, _media);
+        AddTab("TV ve Video", _tv, _tv);
         AddTab("Dosyalar", _files.Grid, _files);
         SwitchTab(Math.Clamp(Settings.DefaultTab, 0, _tabs.Count - 1), animate: false);
     }
@@ -331,6 +336,10 @@ public partial class MainWindow : Window
             .Where(q => q.Title is "Resimler" or "Videolar" or "Müzik" or "İndirilenler" && Directory.Exists(q.Path))
             .Select(q => FileSystemService.FolderTile(q.Title, q.Path, q.Glyph, q.Color))
             .ToList();
+        if (Directory.Exists(Capture.ScreenshotDir))
+            items.Add(FileSystemService.FolderTile("Ekran görüntüleri", Capture.ScreenshotDir, Glyphs.Picture, Theme.Cyan));
+        if (Directory.Exists(Capture.ClipsDir))
+            items.Add(FileSystemService.FolderTile("Klipler", Capture.ClipsDir, Glyphs.Videos, Theme.Violet));
         items.AddRange(recent);
         _media.SetItems(items);
     }
@@ -373,6 +382,18 @@ public partial class MainWindow : Window
         };
         Boot.BeginAnimation(OpacityProperty, fade);
 
+        if (_pendingPicker)
+        {
+            // Birden fazla kullanıcı varsa önce "Kim oynuyor?" ekranı.
+            _pendingPicker = false;
+            ShowProfilePicker(initial: true);
+            return;
+        }
+        RevealStage();
+    }
+
+    void RevealStage()
+    {
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         Stage.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(700)) { BeginTime = TimeSpan.FromMilliseconds(150) });
         StageShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(40, 0, TimeSpan.FromMilliseconds(900)) { BeginTime = TimeSpan.FromMilliseconds(150), EasingFunction = ease });
@@ -384,7 +405,11 @@ public partial class MainWindow : Window
 
     // ───────────────────────────── Görünüm ayarları ─────────────────────────────
 
-    void ApplyTheme() => BaseBg.Fill = Themes.Background(Themes.ByName(Settings.Theme));
+    void ApplyTheme()
+    {
+        BaseBg.Fill = Themes.Background(Themes.ByName(Settings.Theme));
+        CheckTrophies();
+    }
 
     async void ApplyWallpaper()
     {
@@ -452,7 +477,7 @@ public partial class MainWindow : Window
             _ => null,
         };
 
-        if (a == null && key is >= Key.D1 and <= Key.D4 && _overlays.Count == 0 && !_booting)
+        if (a == null && key is >= Key.D1 and <= Key.D5 && _overlays.Count == 0 && !_booting)
         {
             int idx = key - Key.D1;
             if (idx != _tab) { Sfx.Tab(); SwitchTab(idx); }
@@ -603,6 +628,9 @@ public partial class MainWindow : Window
             case TileKind.Action when item.Tag as string == "add-game":
                 AddGame();
                 break;
+            case TileKind.Action when item.Tag as string == "add-tv":
+                AddTvSite();
+                break;
             case TileKind.Folder:
             case TileKind.Drive:
                 if (_tabs[_tab].Screen is FileBrowser) _files.Activate(item);
@@ -626,12 +654,15 @@ public partial class MainWindow : Window
         if (target == null) return;
         try
         {
-            var psi = new ProcessStartInfo(target) { UseShellExecute = true };
-            if (item.LaunchUri == null && File.Exists(target))
+            var psi = item.LaunchArgs != null && item.Path != null
+                ? new ProcessStartInfo(item.Path, item.LaunchArgs) { UseShellExecute = true }
+                : new ProcessStartInfo(target) { UseShellExecute = true };
+            if (item.LaunchUri == null && item.LaunchArgs == null && File.Exists(target))
                 psi.WorkingDirectory = Path.GetDirectoryName(target) ?? "";
             Process.Start(psi);
             Settings.MarkLaunched(item.Key);
             PlaytimeTracker.Track(item);
+            OnLaunched(item);
             Toast(Glyphs.Play, $"{item.Title} başlatılıyor…");
         }
         catch (Exception ex)
@@ -738,14 +769,23 @@ public partial class MainWindow : Window
 
     void OpenSearch()
     {
-        var search = new SearchOverlay(() => _allGames.Concat(_allApps), _device == InputKind.Gamepad);
+        Settings.Count("searches", 1);
+        CheckTrophies();
+        var search = new SearchOverlay(() => _allGames.Concat(_allApps).Concat(_tv.Items.Where(t => t.Kind == TileKind.App)), _device == InputKind.Gamepad);
         search.Activated += OnActivated;
         PushOverlay(search, search, fullBleed: true);
     }
 
     void OpenControlCenter()
     {
-        var cc = new ControlCenter(_notices.Count);
+        var cc = new ControlCenter(new ControlCenter.Options
+        {
+            Notifications = _notices.Count,
+            Weather = _weather,
+            RemoteStatus = RemoteStatus,
+            ToggleRemote = () => SetRemote(!Settings.RemoteEnabled),
+        });
+        cc.OpenTrophies += () => OpenTrophies(null, null);
         cc.OpenSettings += OpenSettings;
         cc.OpenPower += ShowPowerMenu;
         cc.OpenNotifications += ShowNotifications;
@@ -844,6 +884,7 @@ public partial class MainWindow : Window
             default:
                 return;
         }
+        AddExtraOptions(e, item);
         if (inFiles) AddFolderOps(e);
         ShowMenu(new OptionsMenu(item.Title, e));
     }
@@ -877,6 +918,7 @@ public partial class MainWindow : Window
         }
         Settings.Save();
         RebuildHome();
+        CheckTrophies();
     }
 
     void CopyPath(string path)
@@ -990,8 +1032,14 @@ public partial class MainWindow : Window
             new(Glyphs.Sleep, "Uyku modu", () => SetSuspendState(false, false, false)),
             new(Glyphs.Restart, "Yeniden başlat", () => RunShutdown("/r /t 0")),
             new(Glyphs.Power, "Bilgisayarı kapat", () => RunShutdown("/s /t 0")),
-            new(Glyphs.Close, "Nova'dan çık", Close),
         };
+        if (_store.Profiles.Count > 1) e.Insert(1, new(Glyphs.Person, "Kullanıcı değiştir", () => ShowProfilePicker(initial: false)));
+        if (Settings.BackgroundMode)
+        {
+            e.Add(new(Glyphs.Minimize, "Nova'yı arka plana al", HideToTray));
+            e.Add(new(Glyphs.Close, "Nova'yı tamamen kapat", ReallyExit));
+        }
+        else e.Add(new(Glyphs.Close, "Nova'dan çık", ReallyExit));
         ShowMenu(new OptionsMenu("Güç", e));
     }
 
@@ -1127,6 +1175,7 @@ public partial class MainWindow : Window
                 Value = () => "Ctrl+Alt+N · Start+View",
             },
         };
+        rows.InsertRange(rows.Count - 1, ExtraSettingRows());
         var view = new SettingsView(rows);
         _settingsView = view;
         PushOverlay(view, view, fullBleed: true);
@@ -1342,6 +1391,8 @@ public partial class MainWindow : Window
     {
         _notices.Add(new Notice(glyph, text, DateTime.Now));
         if (_notices.Count > 30) _notices.RemoveAt(0);
+        // Nova arka plandayken (oyun açıkken) bildirimi oyunun üstünde göster.
+        if (!IsVisible || !IsActive) { _hud.Notify(glyph, text); return; }
 
         var content = new StackPanel { Orientation = Orientation.Horizontal };
         content.Children.Add(new TextBlock

@@ -1,13 +1,16 @@
 # Nova
 
 **Windows için konsol tarzı, tam ekran bir ana ekran.** Oyunlarına, uygulamalarına, medyana ve
-dosyalarına koltuktan oyun koluyla ulaş; klavye ve fare de her yerde çalışır.
+dosyalarına koltuktan oyun koluyla ulaş; klavye, fare ve telefonun da her yerde çalışır.
+*Türkçe ve İngilizce.*
 
 ![Oyunlar](docs/screenshots/oyunlar.png)
 
 ## İndir
 
-[**Son sürümü indir**](../../releases/latest) → `Nova.exe` dosyasını çalıştır. Kurulum gerekmez.
+[**Son sürümü indir**](../../releases/latest) → zip'i aç, `Nova.exe`'yi çalıştır. İstersen
+**Ayarlar › Nova'yı bu bilgisayara kur** ile Başlat menüsüne ve masaüstüne kısayol eklenir;
+sonraki sürümleri Nova kendisi indirip kurar.
 
 - Windows 10 (1809 ve üzeri) veya Windows 11, 64 bit
 - Sürüm sayfasında iki seçenek var: .NET kurulu olmayan bilgisayarlar için tek başına çalışan exe ve
@@ -19,20 +22,31 @@ dosyalarına koltuktan oyun koluyla ulaş; klavye ve fare de her yerde çalış�
 |---|---|
 | ![Uygulamalar](docs/screenshots/uygulamalar.png) | ![Dosyalar](docs/screenshots/dosyalar.png) |
 | ![Arama](docs/screenshots/arama.png) | ![Kontrol Merkezi](docs/screenshots/kontrol-merkezi.png) |
+| ![TV ve Video](docs/screenshots/tv.png) | ![Ayarlar](docs/screenshots/ayarlar.png) |
 
-- **Oyun kütüphanesi:** Steam, Epic Games, GOG, Xbox / Game Pass, Ubisoft Connect, EA app ve Battle.net oyunlarını kendiliğinden bulur, elle oyun eklemeye de izin verir. Son oynanan başta durur. Steam oyunlarında kapak, tam ekran arka plan, logo ve oynama süresi görünür.
-- **Uygulamalar:** Masaüstü programları ve Microsoft Store uygulamaları, simgeleriyle.
-- **Medya:** Fotoğraf görüntüleyici, video ve müzik oynatıcı, PDF ve metin önizleyici.
-- **Dosya gezgini:** Küçük resimli ızgara; kopyala / kes / yapıştır, yeniden adlandır, geri dönüşüm kutusuna taşı, yeni klasör, sıralama. USB bellek takılınca bildirim gelir.
-- **Arama:** Oyun, uygulama ve (Windows Arama dizini üzerinden) tüm dosyalarda arar; oyun koluyla yazmak için Türkçe ekran klavyesi var.
-- **Kontrol Merkezi:** Çalan müziği (Spotify, tarayıcı vb.) yönetme, ses, parlaklık, ağ, pil, bildirimler.
-- **Ana ekrana sabitleme:** Herhangi bir oyun, uygulama, klasör ya da dosya.
-- **Oynama süresi:** Steam süreleri Steam'den okunur; diğer oyunlarda süreyi Nova ölçer.
-- **Kapak resimleri:** İsteğe bağlı bir [SteamGridDB](https://www.steamgriddb.com/profile/preferences/api) API anahtarıyla Steam dışındaki oyunlara kapak, arka plan ve logo indirilir.
-- **Kişiselleştirme:** Renk temaları, duvar kağıdı, arka plan müziği, Windows açılışında başlatma.
-- **Oyundan geri dönüş:** Bir oyundayken bile tek kısayolla Nova'ya dönülür.
+**Kütüphane ve medya**
+- **Oyunlar:** Steam, Epic Games, GOG, Xbox / Game Pass, Ubisoft Connect, EA app ve Battle.net oyunlarını kendiliğinden bulur; elle oyun da eklenebilir. Son oynanan başta durur. Steam oyunlarında kapak, tam ekran arka plan, logo, oynama süresi, **son haberler** ve **indirme / güncelleme ilerlemesi** görünür.
+- **Uygulamalar:** Masaüstü programları ve Microsoft Store uygulamaları.
+- **TV ve Video:** YouTube, Netflix, Disney+, Prime Video, HBO Max, Exxen, tabii, Twitch, Spotify ve kendi eklediğin siteler tam ekran uygulama modunda açılır.
+- **Medya:** Fotoğraf görüntüleyici, video ve müzik oynatıcı, PDF ve metin önizleyici; ekran görüntüleri ve klipler için ayrı klasörler.
+- **Dosya gezgini:** Küçük resimli ızgara; kopyala / kes / yapıştır, yeniden adlandır, geri dönüşüm kutusu, yeni klasör, sıralama; USB bellek bildirimi.
 
-![Ayarlar](docs/screenshots/ayarlar.png)
+**Konsol deneyimi**
+- **Arka plan modu:** Kapatınca Nova saatin yanındaki simge alanında bekler; kol ya da kısayolla anında açılır. Windows açılışında görünmeden başlayabilir.
+- **Oyun içi hızlı menü:** Oyundayken kolda **Start + View** (ya da Ctrl+Alt+G) ile oyunun üstünde panel açılır: Nova'ya dön, ekran görüntüsü, son 30 saniyeyi kaydet (Xbox Game Bar), ses, oyunu kapat; oturum ve günlük oyun süresi görünür.
+- **Ekran görüntüsü:** Ctrl+Alt+S ile her yerde; Resimler › Nova klasörüne kaydedilir.
+- **Kupalar:** Nova'nın kendi kupaları (bronz, gümüş, altın, platin) ve isteğe bağlı Steam başarımları.
+- **Kontrol Merkezi:** Çalan müzik ve kontrolleri, ses, parlaklık, ağ, pil, işlemci / bellek / ekran kartı kullanımı ve sıcaklığı, takvim, hava durumu, uyku zamanlayıcısı, telefonla kumanda, bildirimler.
+- **Arama:** Oyun, uygulama ve tüm dosyalarda; oyun koluyla yazmak için ekran klavyesi.
+- **Hava durumu** üst çubukta (Open-Meteo; konum otomatik ya da şehir adıyla).
+
+**Kullanım kolaylığı**
+- **Telefonla kumanda:** Aynı Wi-Fi'deki telefonun tarayıcısından yön tuşları, A/B/X/Y ve hızlı yazma; PIN korumalı.
+- **Birden fazla kullanıcı:** "Kim oynuyor?" ekranı; herkesin sabitledikleri, oynama süreleri, kupaları ve ayarları ayrı.
+- **Günlük oyun süresi sınırı** ve **uyku zamanlayıcısı** (uyku ya da kapatma).
+- **Kişiselleştirme:** Renk temaları, duvar kağıdı, arka plan müziği, ana ekrana sabitleme.
+- **Kurulum ve otomatik güncelleme**, **Türkçe / İngilizce** arayüz.
+
 
 ## Kontroller
 
@@ -45,13 +59,18 @@ dosyalarına koltuktan oyun koluyla ulaş; klavye ve fare de her yerde çalış�
 | Arama | S, Ctrl+F | X | Kare |
 | Kontrol Merkezi | C | View | PS / Create / dokunmatik yüzey |
 | Güç menüsü | P | Start | Options |
-| Sekme değiştir | Q / E, Tab, 1–4 | LB / RB | L1 / R1 |
+| Sekme değiştir | Q / E, Tab, 1–5 | LB / RB | L1 / R1 |
 | Sayfa atla | PgUp / PgDn | LT / RT | L2 / R2 |
-| **Nova'ya dön** (oyundayken bile) | **Ctrl + Alt + N** | **Start + View** | **Options + Create** |
+| **Nova'ya dön** | **Ctrl + Alt + N** | **Start + View** (Nova gizliyken) | **Options + Create** |
+| **Oyun içi menü** | **Ctrl + Alt + G** | **Start + View** (oyundayken) | **Options + Create** |
+| **Ekran görüntüsü** | **Ctrl + Alt + S** | Oyun içi menüden | Oyun içi menüden |
 | Pencere / tam ekran | F11 | — | — |
 
 Xbox ve XInput uyumlu kollar XInput ile, DualShock 4 ve DualSense ise Windows.Gaming.Input ile ek
 program gerekmeden desteklenir.
+
+Oyun içi menü pencereli ya da kenarlıksız tam ekran oyunlarda görünür; özel tam ekran modundaki
+bazı oyunlarda görünmeyebilir. "Son 30 saniyeyi kaydet" için Xbox Game Bar'da arka plan kaydı açık olmalı.
 
 ## Kaynaktan derleme
 
@@ -67,17 +86,21 @@ Tek dosyalık exe:
 dotnet publish Nova.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish-standalone
 ```
 
-Ayarlar `%AppData%\Nova\settings.json`, indirilen kapaklar `%AppData%\Nova\art`, hata kayıtları
-`%AppData%\Nova\error.log` içinde tutulur.
+Uygulama simgesi `tools/make-icon.ps1` ile üretilir.
+
+Ayarlar `%AppData%\Nova\settings.json` (ek kullanıcılar için `settings_<id>.json`), kullanıcı listesi
+`profiles.json`, indirilen görseller `art\`, hata kayıtları `error.log` içinde tutulur.
 
 ### Teknik notlar
 
 - C# / .NET 9, WPF; arayüz 1920x1080 tuval üzerinde tasarlanıp her çözünürlüğe ölçeklenir
 - Küçük resimler ve simgeler: Windows Shell `IShellItemImageFactory` (COM)
-- Ses seviyesi: Core Audio `IAudioEndpointVolume`; parlaklık: WMI
+- Ses seviyesi: Core Audio `IAudioEndpointVolume`; parlaklık ve ekran kartı kullanımı: WMI; NVIDIA'da `nvidia-smi`
 - Oyun kolu: XInput ve `Windows.Gaming.Input.RawGameController`
 - Dosya araması: Windows Search dizini (OLE DB)
 - Çalan medya, ağ bilgisi ve PDF önizleme: WinRT API'leri
+- Telefonla kumanda: yerel ağda küçük bir HTTP sunucusu (bağlantı noktası 8642, PIN ve çerezle korunur)
+- Dil desteği: arayüz metinleri ekrana gelirken çeviri tablosundan çevrilir
 - Arayüz sesleri dosyadan değil, açılışta sentezlenen dalga formlarından üretilir
 
 ### Test modu

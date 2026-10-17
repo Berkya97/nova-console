@@ -54,11 +54,11 @@ public static class GameLibrary
         var play = Fmt.Playtime(g.PlaytimeMinutes);
         if (play.Length > 0) parts.Add(play);
         parts.Add(Fmt.Ago(g.LastPlayed));
-        g.Subtitle = string.Join("  ·  ", parts);
+        g.SetSubtitle(string.Join("  ·  ", parts));
     }
 
     static TileItem Game(string source, string key, string title, string? exe = null, string? uri = null,
-        string? installDir = null, string? cover = null, string? hero = null, string? logo = null, bool custom = false) => new()
+        string? installDir = null, string? cover = null, string? hero = null, string? logo = null, bool custom = false, string? statusFile = null) => new()
     {
         Kind = TileKind.Game,
         Title = title,
@@ -75,6 +75,7 @@ public static class GameLibrary
         ActionGlyph = Glyphs.Play,
         IsCustom = custom,
         Source = source,
+        StatusFile = statusFile,
     };
 
     // ───────────── Steam ─────────────
@@ -119,7 +120,7 @@ public static class GameLibrary
                 var item = Game("Steam", "steam:" + id, name, uri: "steam://rungameid/" + id, installDir: installDir,
                     cover: Art(cache, id, "library_600x900.jpg") ?? Art(cache, id, "header.jpg"),
                     hero: Art(cache, id, "library_hero.jpg"),
-                    logo: Art(cache, id, "logo.png"));
+                    logo: Art(cache, id, "logo.png"), statusFile: acf);
                 item.LastPlayed = lastPlayed;
                 if (stats.TryGetValue(id, out var st))
                 {

@@ -36,7 +36,7 @@ public sealed class OnScreenKeyboard : StackPanel
         Loaded += (_, _) => { if (_rows.Count == 0) Build(); };
     }
 
-    public bool IsKeyboardFocused
+    public bool ShowsSelection
     {
         get => _focused;
         set { _focused = value; Refresh(); }
@@ -44,7 +44,9 @@ public sealed class OnScreenKeyboard : StackPanel
 
     void Build()
     {
-        string[] lines = { "1234567890", "qwertyuıopğü", "asdfghjklşi", "zxcvbnmöç.-" };
+        string[] lines = L.En
+            ? new[] { "1234567890", "qwertyuiop", "asdfghjkl@", "zxcvbnm.-_" }
+            : new[] { "1234567890", "qwertyuıopğü", "asdfghjklşi", "zxcvbnmöç.-" };
         foreach (var line in lines)
             _rows.Add(line.Select(ch => new KeyDef { Text = ch.ToString() }).ToList());
         _rows.Add(new List<KeyDef>

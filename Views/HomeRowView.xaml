@@ -65,6 +65,12 @@
             </StackPanel>
         </StackPanel>
 
+        <!-- Seçili Steam oyununun son haberleri -->
+        <StackPanel x:Name="NewsPanel" Margin="120,0,0,140" VerticalAlignment="Bottom" HorizontalAlignment="Left" Visibility="Collapsed">
+            <TextBlock Text="Haberler" FontSize="20" Foreground="{StaticResource TextFaint}" Margin="4,0,0,12"/>
+            <StackPanel x:Name="NewsRow" Orientation="Horizontal"/>
+        </StackPanel>
+
         <TextBlock x:Name="CountText" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,120,100"
                    FontSize="18" Foreground="{StaticResource TextFaint}"/>
     </Grid>

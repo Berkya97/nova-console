@@ -235,7 +235,7 @@ public sealed class SearchOverlay : Grid, IOverlay, ITextTarget
 
     void Refresh()
     {
-        _osk.IsKeyboardFocused = !_inResults;
+        _osk.ShowsSelection = !_inResults;
         for (int i = 0; i < _results.Count; i++)
         {
             bool sel = _inResults && i == _sel;

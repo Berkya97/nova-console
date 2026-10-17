@@ -16,6 +16,9 @@ public partial class HomeRowView : UserControl, IScreen
     List<TileItem> _items = new();
     int _sel = -1;
     int _detailToken;
+    readonly List<(Border View, string Url)> _news = new();
+    int _newsSel;
+    bool _inNews;
 
     public event Action<TileItem>? Activated;
     public event Action<TileItem>? OptionsRequested;
@@ -39,8 +42,15 @@ public partial class HomeRowView : UserControl, IScreen
     {
         get
         {
+            if (_inNews)
+            {
+                yield return (NavAction.Confirm, "Haberi aç");
+                yield return (NavAction.Up, "Oyunlara dön");
+                yield break;
+            }
             if (Selected is { } s) yield return (NavAction.Confirm, s.ActionLabel);
             if (Selected is { Kind: not TileKind.Action }) yield return (NavAction.Options, "Seçenekler");
+            if (_news.Count > 0) yield return (NavAction.Down, "Haberler");
             yield return (NavAction.TabNext, "Sekme");
             yield return (NavAction.Menu, "Güç");
         }
@@ -67,8 +77,25 @@ public partial class HomeRowView : UserControl, IScreen
 
     public bool Handle(NavAction a)
     {
+        if (_inNews)
+        {
+            switch (a)
+            {
+                case NavAction.Left: return SelectNews(_newsSel - 1);
+                case NavAction.Right: return SelectNews(_newsSel + 1);
+                case NavAction.Up:
+                case NavAction.Back:
+                    _inNews = false; RefreshNews(); return true;
+                case NavAction.Confirm:
+                    OpenUrl(_news[_newsSel].Url); return true;
+            }
+            return false;
+        }
         switch (a)
         {
+            case NavAction.Down:
+                if (_news.Count == 0) return false;
+                _inNews = true; _newsSel = 0; RefreshNews(); return true;
             case NavAction.Left: return Move(-1);
             case NavAction.Right: return Move(1);
             case NavAction.PageUp: return Move(-6);
@@ -123,7 +150,13 @@ public partial class HomeRowView : UserControl, IScreen
     async void UpdateDetail(TileItem? item)
     {
         int token = ++_detailToken;
-        if (item == null) { Detail.Visibility = Visibility.Hidden; return; }
+        if (item == null)
+        {
+            Detail.Visibility = Visibility.Hidden;
+            NewsPanel.Visibility = Visibility.Collapsed;
+            _news.Clear();
+            return;
+        }
 
         Detail.Visibility = Visibility.Visible;
         BigTitle.Text = item.Title;
@@ -134,6 +167,7 @@ public partial class HomeRowView : UserControl, IScreen
         ActionText.Text = item.ActionLabel;
         ActionGlyph.Text = item.ActionGlyph;
         MoreBtn.Visibility = item.Kind == TileKind.Action ? Visibility.Collapsed : Visibility.Visible;
+        LoadNews(item, token);
 
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         Detail.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260)));
@@ -154,6 +188,62 @@ public partial class HomeRowView : UserControl, IScreen
     void OnSelectedChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(TileItem.LogoPath) && sender == Selected) UpdateDetail(Selected);
+        else if (e.PropertyName == nameof(TileItem.Subtitle) && sender == Selected) Meta.Text = Selected!.Subtitle;
+    }
+
+    // ───── Haberler ─────
+
+    async void LoadNews(TileItem item, int token)
+    {
+        _news.Clear();
+        NewsRow.Children.Clear();
+        NewsPanel.Visibility = Visibility.Collapsed;
+        _inNews = false;
+        if (!item.Key.StartsWith("steam:")) return;
+        await Task.Delay(400); // hızlı kaydırırken her kart için istek atma
+        if (token != _detailToken) return;
+        var list = await Services.SteamOnline.NewsAsync(item.Key[6..]);
+        if (token != _detailToken || list.Count == 0) return;
+        foreach (var n in list)
+        {
+            var text = new StackPanel();
+            var title = Ui.Text(n.Title, 18, weight: FontWeights.SemiBold);
+            title.TextWrapping = TextWrapping.Wrap;
+            title.MaxHeight = 48;
+            text.Children.Add(title);
+            text.Children.Add(Ui.Text($"{n.Date.ToString("d MMMM yyyy", Fmt.Tr)}  ·  {n.Feed}", 14, Ui.Faint));
+            var card = new Border
+            {
+                Width = 400, Height = 110, Margin = new Thickness(0, 0, 16, 0), Padding = new Thickness(20, 16, 20, 14),
+                CornerRadius = new CornerRadius(16), Background = new SolidColorBrush(Color.FromArgb(0x26, 255, 255, 255)),
+                BorderThickness = new Thickness(3), Child = text, Cursor = Cursors.Hand,
+            };
+            var url = n.Url;
+            card.MouseLeftButtonUp += (_, _) => OpenUrl(url);
+            _news.Add((card, url));
+            NewsRow.Children.Add(card);
+        }
+        NewsPanel.Visibility = Visibility.Visible;
+        Ui.FadeIn(NewsPanel, 16);
+        RefreshNews();
+    }
+
+    bool SelectNews(int i)
+    {
+        if (i < 0 || i >= _news.Count) return false;
+        _newsSel = i;
+        RefreshNews();
+        return true;
+    }
+
+    void RefreshNews()
+    {
+        for (int i = 0; i < _news.Count; i++) Ui.SetRing(_news[i].View, _inNews && i == _newsSel);
+    }
+
+    static void OpenUrl(string url)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
     }
 
     void OnRowClick(object sender, MouseButtonEventArgs e)

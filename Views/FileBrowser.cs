@@ -17,6 +17,7 @@ public sealed class FileBrowser : IScreen
     public event Action<string>? Error;
     /// <summary>Boş bir klasörde Seçenekler'e basıldı (yapıştır / yeni klasör menüsü için).</summary>
     public event Action? FolderOptions;
+    public event Action? FolderOpened;
 
     public FileBrowser()
     {
@@ -55,6 +56,7 @@ public sealed class FileBrowser : IScreen
     {
         _history.Push((_path, Grid.SelectedIndex));
         if (!await Load(path, 0)) _history.Pop();
+        else FolderOpened?.Invoke();
     }
 
     /// <summary>Başka bir sekmeden doğrudan bir klasöre atlarken: geri tuşu kök görünüme döner.</summary>

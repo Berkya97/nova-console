@@ -116,6 +116,14 @@
                     </Border.Background>
                 </Border>
                 <Image Source="{Binding IconImage}" Margin="20"/>
+                <Grid VerticalAlignment="Bottom" Margin="10,0,10,10" Height="5" Visibility="{Binding ProgressVisibility}">
+                    <Border CornerRadius="2.5" Background="#80000000"/>
+                    <Border CornerRadius="2.5" Background="White" RenderTransformOrigin="0,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding Progress}"/>
+                        </Border.RenderTransform>
+                    </Border>
+                </Grid>
                 <TextBlock Text="{Binding Glyph}" Style="{StaticResource GlyphText}" FontSize="44"/>
                 <Border Width="30" Height="30" CornerRadius="15" Background="#F2FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-9,-9,0" Visibility="{Binding PinVisibility}"><TextBlock Text="&#xE718;" Style="{StaticResource GlyphText}" Foreground="#0B0F1A" FontSize="14"/></Border>
             </Grid>

@@ -35,7 +35,7 @@ public sealed class SettingsView : Grid, IOverlay
     {
         _rows = rows;
         // Tema değişikliği arkada görünsün diye biraz şeffaf.
-        Background = new SolidColorBrush(Color.FromArgb(0xC8, 0x05, 0x08, 0x12));
+        Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x05, 0x08, 0x12));
         var (box, canvas) = Ui.Stage();
         Children.Add(box);
 

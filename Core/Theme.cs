@@ -68,6 +68,19 @@ public static class Glyphs
     public const string Text = "";
     public const string Store = "";
     public const string Home = "";
+    public static readonly string Back = "";
+    public static readonly string Trophy = "";
+    public static readonly string Calendar = "";
+    public static readonly string Cpu = "";
+    public static readonly string Phone = "";
+    public static readonly string Person = "";
+    public static readonly string AddFriend = "";
+    public static readonly string Tv = "";
+    public static readonly string Globe = "";
+    public static readonly string Language = "";
+    public static readonly string Install = "";
+    public static readonly string Download = "";
+    public static readonly string News = "";
 }
 
 /// <summary>Arka plan renk temaları.</summary>
@@ -134,7 +147,8 @@ public static class Theme
 
 public static class Fmt
 {
-    public static readonly CultureInfo Tr = CultureInfo.GetCultureInfo("tr-TR");
+    /// <summary>Seçili dile göre biçimlendirme kültürü (tarih, sayı).</summary>
+    public static CultureInfo Tr => L.Culture;
 
     public static string Size(long bytes)
     {

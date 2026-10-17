@@ -40,6 +40,44 @@ public sealed class TileItem : INotifyPropertyChanged
     public double PlaytimeMinutes { get; set; }
     /// <summary>Platform adı: Steam, Epic Games, GOG, Xbox…</summary>
     public string Source { get; init; } = "";
+    /// <summary>Path ile birlikte verilen komut satırı (ör. tarayıcıyı uygulama modunda açmak).</summary>
+    public string? LaunchArgs { get; init; }
+    /// <summary>Steam appmanifest dosyası: indirme / güncelleme ilerlemesini izlemek için.</summary>
+    public string? StatusFile { get; init; }
+    /// <summary>Kapak yerine ortalanmış simge olarak gösterilecek görsel dosyası.</summary>
+    public string? IconFile { get; private set; }
+
+    double _progress = double.NaN;
+    /// <summary>0–1 arası indirme ilerlemesi; NaN ise çubuk gizli.</summary>
+    public double Progress
+    {
+        get => _progress;
+        set
+        {
+            if (_progress.Equals(value)) return;
+            _progress = value;
+            Changed();
+            Changed(nameof(ProgressVisibility));
+        }
+    }
+    public Visibility ProgressVisibility => double.IsNaN(_progress) ? Visibility.Collapsed : Visibility.Visible;
+
+    public void SetIconFile(string file)
+    {
+        IconFile = file;
+        Glyph = null;
+        Changed(nameof(Glyph));
+        _thumbRequested = false;
+        _thumb = null;
+        EnsureThumb();
+    }
+
+    public void SetSubtitle(string s)
+    {
+        if (Subtitle == s) return;
+        Subtitle = s;
+        Changed(nameof(Subtitle));
+    }
 
     // Nesne başlatıcıyla verilebilen görsel bilgileri.
     public string? InitGlyph { init => Glyph = value; }
@@ -90,7 +128,7 @@ public sealed class TileItem : INotifyPropertyChanged
         if (_thumbRequested) return;
         _thumbRequested = true;
         var shellPath = IconPath ?? Path;
-        if (CoverPath == null && (shellPath == null || Glyph != null)) return;
+        if (CoverPath == null && IconFile == null && (shellPath == null || Glyph != null)) return;
         _ = LoadThumbAsync();
     }
 
@@ -102,6 +140,11 @@ public sealed class TileItem : INotifyPropertyChanged
             {
                 var cover = await ImageCache.LoadAsync(CoverPath, 320);
                 if (cover != null) { SetThumb(cover, false); return; }
+            }
+            if (IconFile != null)
+            {
+                var icon = await ImageCache.LoadAsync(IconFile, 256);
+                if (icon != null) { SetThumb(icon, true); return; }
             }
 
             var path = IconPath ?? Path;

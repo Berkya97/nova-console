@@ -11,31 +11,44 @@ using Nova.Models;
 namespace Nova.Services;
 
 /// <summary>
-/// Steam dışındaki oyunların oynama süresini ölçer: oyun başlatıldıktan sonra kurulum klasöründen
-/// çalışan bir süreç görünür, kapanınca geçen süre kaydedilir.
+/// Oyun oturumlarını izler: oyun başlatıldıktan sonra kurulum klasöründen çalışan bir süreç görünür,
+/// kapanınca geçen süre kaydedilir. Steam dışındaki oyunlarda oyun başına süre, tüm oyunlarda
+/// günlük toplam (süre sınırı için) tutulur.
 /// </summary>
 public static class PlaytimeTracker
 {
     sealed class Session
     {
-        public string Key = "", Dir = "";
+        public string Key = "", Dir = "", Title = "";
+        public bool CountPlaytime;
         public DateTime Launched;
-        public DateTime? Seen;
+        public DateTime? Seen, LastTick;
     }
 
     static readonly List<Session> Sessions = new();
     static DispatcherTimer? _timer;
     static bool _busy;
+    static string _warnedDay = "", _warnedSoonDay = "";
 
     public static event Action<string, double>? Recorded;
+    /// <summary>Günlük oyun süresi sınırı uyarısı (mesaj).</summary>
+    public static event Action<string>? LimitWarning;
+
+    /// <summary>Şu an çalışan oyunun bu oturumdaki süresi (dakika), yoksa null.</summary>
+    public static (string Title, double Minutes)? Current =>
+        Sessions.Where(s => s.Seen != null).Select(s => (s.Title, (DateTime.UtcNow - s.Seen!.Value).TotalMinutes)).Cast<(string, double)?>().FirstOrDefault();
 
     public static void Track(TileItem game)
     {
-        if (game.Kind != TileKind.Game || string.IsNullOrEmpty(game.InstallDir) || game.Key.StartsWith("steam:")) return;
+        if (game.Kind != TileKind.Game || string.IsNullOrEmpty(game.InstallDir)) return;
         var dir = game.InstallDir.TrimEnd('\\') + "\\";
         if (dir.Length <= 4) return; // sürücü kökü: güvenilmez
         Sessions.RemoveAll(s => s.Key == game.Key);
-        Sessions.Add(new Session { Key = game.Key, Dir = dir, Launched = DateTime.UtcNow });
+        Sessions.Add(new Session
+        {
+            Key = game.Key, Dir = dir, Title = game.Title, Launched = DateTime.UtcNow,
+            CountPlaytime = !game.Key.StartsWith("steam:"), // Steam süresini zaten kendisi tutuyor
+        });
         if (_timer == null)
         {
             _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
@@ -52,25 +65,52 @@ public static class PlaytimeTracker
         {
             var paths = await Task.Run(Native.RunningImagePaths);
             var now = DateTime.UtcNow;
-            foreach (var s in Sessions.ToList())
+            var s = AppSettings.Current;
+            foreach (var x in Sessions.ToList())
             {
-                bool running = paths.Any(p => p.StartsWith(s.Dir, StringComparison.OrdinalIgnoreCase));
-                if (running) s.Seen ??= now;
-                else if (s.Seen is { } start)
+                bool running = paths.Any(p => p.StartsWith(x.Dir, StringComparison.OrdinalIgnoreCase));
+                if (running)
                 {
-                    var minutes = (now - start).TotalMinutes;
-                    AppSettings.Current.AddPlaytime(s.Key, minutes);
-                    Sessions.Remove(s);
-                    Recorded?.Invoke(s.Key, AppSettings.Current.PlaytimeOf(s.Key));
+                    if (x.Seen == null) { x.Seen = x.LastTick = now; continue; }
+                    s.AddDailyPlay((now - x.LastTick!.Value).TotalMinutes);
+                    x.LastTick = now;
                 }
-                else if (now - s.Launched > TimeSpan.FromMinutes(3)) Sessions.Remove(s);
+                else if (x.Seen is { } start)
+                {
+                    s.AddDailyPlay((now - x.LastTick!.Value).TotalMinutes);
+                    Sessions.Remove(x);
+                    if (x.CountPlaytime)
+                    {
+                        s.AddPlaytime(x.Key, (now - start).TotalMinutes);
+                        Recorded?.Invoke(x.Key, s.PlaytimeOf(x.Key));
+                    }
+                    else s.Save();
+                }
+                else if (now - x.Launched > TimeSpan.FromMinutes(3)) Sessions.Remove(x);
             }
+            CheckLimit(s);
             if (Sessions.Count == 0) _timer?.Stop();
         }
         finally { _busy = false; }
     }
-}
 
+    static void CheckLimit(AppSettings s)
+    {
+        if (s.PlayLimitMinutes <= 0 || !Sessions.Any(x => x.Seen != null)) return;
+        var played = s.PlayedToday();
+        var today = AppSettings.Today;
+        if (played >= s.PlayLimitMinutes && _warnedDay != today)
+        {
+            _warnedDay = today;
+            LimitWarning?.Invoke("Bugünkü oyun süren doldu. Biraz mola vermeye ne dersin?");
+        }
+        else if (played >= s.PlayLimitMinutes - 10 && _warnedSoonDay != today && played < s.PlayLimitMinutes)
+        {
+            _warnedSoonDay = today;
+            LimitWarning?.Invoke("Bugünkü oyun süren 10 dakika içinde doluyor");
+        }
+    }
+}
 /// <summary>SteamGridDB'den kapak, arka plan ve logo indirir (kullanıcının API anahtarıyla).</summary>
 public static class SteamGridDb
 {
@@ -283,10 +323,12 @@ public static class StartupRegistration
         return k?.GetValue("Nova") != null;
     }
 
-    public static void Set(bool on)
+    /// <summary>Açılışta arka planda (gizli) başlar; Ctrl+Alt+N veya kol kombinasyonuyla açılır.</summary>
+    public static void Set(bool on, string? exe = null)
     {
         using var k = Registry.CurrentUser.CreateSubKey(RunKey);
-        if (on && Environment.ProcessPath is { } exe) k.SetValue("Nova", $"\"{exe}\"");
+        exe ??= Environment.ProcessPath;
+        if (on && exe != null) k.SetValue("Nova", $"\"{exe}\" --background");
         else k.DeleteValue("Nova", false);
     }
 }

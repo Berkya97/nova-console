@@ -6,13 +6,26 @@
     <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
+    <!-- Yalnızca tepsi simgesi (NotifyIcon) ve ekran görüntüsü için. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Nova</AssemblyName>
     <RootNamespace>Nova</RootNamespace>
     <Product>Nova</Product>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
+    <ApplicationIcon>Assets\nova.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WinForms/Drawing türleri WPF türleriyle çakışmasın: yalnızca gerektiği yerde açıkça kullanılır. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\nova.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Data.OleDb" Version="9.0.0" />
