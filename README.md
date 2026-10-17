@@ -1,5 +1,7 @@
 # Nova
 
+[English](README.en.md) | Türkçe
+
 **Windows için konsol tarzı, tam ekran bir ana ekran.** Oyunlarına, uygulamalarına, medyana ve
 dosyalarına koltuktan oyun koluyla ulaş; klavye, fare ve telefonun da her yerde çalışır.
 *Türkçe ve İngilizce.*
